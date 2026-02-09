@@ -103,7 +103,7 @@
   <script>
     const form = document.getElementById("formLoginProfessor");
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const payload = {
@@ -111,11 +111,41 @@
         senha: document.getElementById("senha").value
       };
 
-      // 🔹 placeholder do webhook n8n
-      console.log("Payload enviado:", payload);
+      try {
+        const response = await fetch(
+          "https://webhook.artideia.com.br/webhook/dashboard-SERP",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          }
+        );
 
-      // fluxo real será tratado depois no n8n
-      // window.location.href = "pagina2.html";
+        const data = await response.json();
+
+        // 🔒 normaliza resposta (array ou objeto)
+        const contexto = Array.isArray(data) ? data[0] : data;
+
+        if (!contexto || contexto.erro) {
+          alert(contexto?.erro || "Credenciais inválidas.");
+          return;
+        }
+
+        // salva contexto do professor
+        sessionStorage.setItem(
+          "serp_contexto",
+          JSON.stringify(contexto)
+        );
+
+        // redireciona para página 2
+        window.location.href = "pagina2.html";
+
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao conectar com o servidor.");
+      }
     });
   </script>
 
