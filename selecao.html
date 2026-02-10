@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Seleção da Turma</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-top: 6px solid #003366;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: #003366;
+      text-align: center;
+      font-size: 1.3rem;
+    }
+
+    .professor {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      background-color: #fff;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #00509e;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #003366;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #00509e;
+    }
+
+    .footer {
+      margin-top: 14px;
+      font-size: 0.8rem;
+      text-align: center;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h2>Diário de Classe</h2>
+
+    <div class="professor" id="infoProfessor"></div>
+
+    <form id="formFiltroTurma">
+      <label for="semestre">Semestre</label>
+      <select id="semestre" required></select>
+
+      <label for="periodo">Período</label>
+      <select id="periodo" required></select>
+
+      <label for="disciplina">Disciplina</label>
+      <select id="disciplina" required></select>
+
+      <label for="modulo">Módulo</label>
+      <select id="modulo"></select>
+
+      <button type="submit">Gerar relatório</button>
+    </form>
+
+    <div class="footer">
+      Universidade Federal Fluminense
+    </div>
+  </div>
+
+  <script>
+    const contexto = JSON.parse(sessionStorage.getItem("serp_contexto"));
+
+    if (!contexto) {
+      alert("Sessão expirada. Faça login novamente.");
+      window.location.href = "index.html";
+    }
+
+    document.getElementById("infoProfessor").innerText =
+      `Professor(a): ${contexto.nome}`;
+
+    const selects = {
+      semestre: document.getElementById("semestre"),
+      periodo: document.getElementById("periodo"),
+      disciplina: document.getElementById("disciplina"),
+      modulo: document.getElementById("modulo")
+    };
+
+    function preencherSelect(select, lista) {
+      select.innerHTML = '<option value="">Selecione</option>';
+      lista.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item;
+        opt.textContent = item;
+        select.appendChild(opt);
+      });
+    }
+
+    async function carregarFiltros() {
+      try {
+        const response = await fetch(
+          "https://webhook.artideia.com.br/webhook/serp-filtros",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              professor_id: contexto.professor_id
+            })
+          }
+        );
+
+        const data = await response.json();
+        const filtros = Array.isArray(data) ? data[0] : data;
+
+        preencherSelect(selects.semestre, filtros.semestres);
+        preencherSelect(selects.periodo, filtros.periodos);
+        preencherSelect(selects.disciplina, filtros.disciplinas);
+        preencherSelect(selects.modulo, filtros.modulos || []);
+
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao carregar filtros.");
+      }
+    }
+
+    carregarFiltros();
+
+    document
+      .getElementById("formFiltroTurma")
+      .addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const payload = {
+          professor_id: contexto.professor_id,
+          semestre: selects.semestre.value,
+          periodo: selects.periodo.value,
+          disciplina: selects.disciplina.value,
+          modulo: selects.modulo.value
+        };
+
+        sessionStorage.setItem(
+          "serp_filtro_turma",
+          JSON.stringify(payload)
+        );
+
+        window.location.href = "pagina3.html";
+      });
+  </script>
+
+</body>
+</html>
