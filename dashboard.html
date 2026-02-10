@@ -81,7 +81,6 @@ td.nome {
 }
 
 td.matricula {
-  text-align: left;
   background: #f7f9fc;
   position: sticky;
   left: 200px; /* ajusta conforme largura do nome */
@@ -105,6 +104,17 @@ td.matricula {
   background: #e2e3e5;
 }
 
+/* Destaques especiais */
+td.total, th.total {
+  background: #e0f0ff; /* tom suave azul */
+  font-weight: bold;
+}
+
+tr.total-linha {
+  background: #f0f4f8; /* tom suave cinza */
+  font-weight: bold;
+}
+
 .legenda {
   margin-top: 14px;
   font-size: 0.85rem;
@@ -116,7 +126,7 @@ td.matricula {
 
 <div class="container">
 
-  <h2>Diário de Classe</h2>
+  <h2>SERP - Diário de Classe</h2>
 
   <div class="info-box" id="infoTurma"></div>
 
@@ -214,7 +224,7 @@ selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
 // ==============================
-// 5. Renderização do Diário com matrícula, total por aluno e linha final
+// 5. Renderização do Diário com matrícula, total e destaques
 // ==============================
 
 function renderizar() {
@@ -245,7 +255,7 @@ function renderizar() {
       <th>Aluno</th>
       <th>Matrícula</th>
       ${dias.map(d => `<th>${d}</th>`).join("")}
-      <th>Total</th>
+      <th class="total">Total</th>
     </tr>
   `;
 
@@ -280,18 +290,18 @@ function renderizar() {
     });
 
     const percentual = ((totalConfirmadas / totalDias) * 100).toFixed(1);
-    html += `<td>${totalConfirmadas} ✅ (${percentual}%)</td>`;
+    html += `<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td>`;
 
     html += `</tr>`;
   });
 
   // Linha final: total de presenças por dia
-  html += `<tr><td class="nome"><strong>Total ✅</strong></td><td></td>`;
+  html += `<tr class="total-linha"><td class="nome">Total ✅</td><td></td>`;
   dias.forEach(dia => {
     const totalDia = filtrado.filter(r => r.data.split("/")[0] === dia && r.presenca).length;
-    html += `<td><strong>${totalDia}</strong></td>`;
+    html += `<td class="total">${totalDia}</td>`;
   });
-  html += `<td>-</td>`; // coluna total não precisa somar percentual
+  html += `<td class="total"></td>`; // coluna total
   html += `</tr>`;
 
   tabela.innerHTML = html;
