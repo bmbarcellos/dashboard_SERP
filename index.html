@@ -140,12 +140,12 @@
 
         sessionStorage.setItem(
         "professor",
-        JSON.stringify(contexto.professor)
+        JSON.stringify(contexto.professor || {})
         );
 
         sessionStorage.setItem(
         "curriculo",
-        JSON.stringify(contexto.curriculo)
+        JSON.stringify(Array.isArray(contexto.curriculo) ? contexto.curriculo : [])
         );
 
 
