@@ -59,11 +59,6 @@
       background-color: #fff;
     }
 
-    select:focus {
-      outline: none;
-      border-color: #00509e;
-    }
-
     button {
       width: 100%;
       padding: 10px;
@@ -91,35 +86,43 @@
 
 <body>
 
-  <div class="container">
-    <h2>Diário de Classe</h2>
+<div class="container">
+  <h2>Diário de Classe</h2>
 
-    <!-- Mensagem de boas-vindas -->
-    <div class="boas-vindas" id="boasVindas"></div>
+  <div class="boas-vindas" id="boasVindas"></div>
 
-    <form id="formFiltroTurma">
-      <label for="semestre">Semestre</label>
-      <select id="semestre" required></select>
+  <form id="formFiltroTurma">
+    <label for="semestre">Semestre</label>
+    <select id="semestre"></select>
 
-      <label for="periodo">Período</label>
-      <select id="periodo" required></select>
+    <label for="periodo">Período</label>
+    <select id="periodo" disabled></select>
 
-      <label for="disciplina">Disciplina</label>
-      <select id="disciplina" required></select>
+    <label for="disciplina">Disciplina</label>
+    <select id="disciplina" disabled></select>
 
-      <label for="modulo">Módulo</label>
-      <select id="modulo"></select>
+    <label for="modulo">Módulo</label>
+    <select id="modulo" disabled></select>
 
-      <button type="submit">Gerar relatório</button>
-    </form>
+    <button type="submit">Gerar relatório</button>
+  </form>
 
-    <div class="footer">
-      Universidade Federal Fluminense
-    </div>
-  </div>
+  <div class="footer">Universidade Federal Fluminense</div>
+</div>
 
-  <script>
-  const dados = JSON.parse(sessionStorage.getItem("serp_contexto")) || [];
+<script>
+  const professor = JSON.parse(sessionStorage.getItem("professor"));
+  const dados = JSON.parse(sessionStorage.getItem("curriculo")) || [];
+
+  if (!professor || dados.length === 0) {
+    alert("Sessão expirada ou currículo indisponível.");
+    window.location.href = "index.html";
+  }
+
+  document.getElementById("boasVindas").innerHTML = `
+    <strong>Professor(a) ${professor.nome}</strong><br>
+    Matrícula: ${professor.matricula}
+  `;
 
   const selSemestre   = document.getElementById("semestre");
   const selPeriodo    = document.getElementById("periodo");
@@ -128,8 +131,8 @@
 
   const unico = (arr) => [...new Set(arr)];
 
-  function resetSelect(select, placeholder, disabled = true) {
-    select.innerHTML = `<option value="">${placeholder}</option>`;
+  function reset(select, texto, disabled = true) {
+    select.innerHTML = `<option value="">${texto}</option>`;
     select.disabled = disabled;
   }
 
@@ -143,75 +146,64 @@
     select.disabled = false;
   }
 
-  /* ===============================
-     1️⃣ SEMESTRE
-  =============================== */
-  const semestres = unico(dados.map(d => d.semestre));
-  resetSelect(selSemestre, "Selecione o semestre", false);
-  preencher(selSemestre, semestres);
+  // SEMESTRE
+  reset(selSemestre, "Selecione o semestre", false);
+  preencher(selSemestre, unico(dados.map(d => d.semestre)));
 
-  /* ===============================
-     2️⃣ PERÍODO (dependente)
-  =============================== */
+  // PERÍODO
   selSemestre.addEventListener("change", () => {
-    resetSelect(selPeriodo, "Selecione o período");
-    resetSelect(selDisciplina, "Selecione a disciplina");
-    resetSelect(selModulo, "Selecione o módulo");
+    reset(selPeriodo, "Selecione o período");
+    reset(selDisciplina, "Selecione a disciplina");
+    reset(selModulo, "Selecione o módulo");
 
     if (!selSemestre.value) return;
 
-    const periodos = unico(
-      dados
-        .filter(d => d.semestre === selSemestre.value)
-        .map(d => d["período"])
+    preencher(
+      selPeriodo,
+      unico(dados.filter(d => d.semestre === selSemestre.value).map(d => d.periodo))
     );
-
-    preencher(selPeriodo, periodos);
   });
 
-  /* ===============================
-     3️⃣ DISCIPLINA (dependente)
-  =============================== */
+  // DISCIPLINA
   selPeriodo.addEventListener("change", () => {
-    resetSelect(selDisciplina, "Selecione a disciplina");
-    resetSelect(selModulo, "Selecione o módulo");
+    reset(selDisciplina, "Selecione a disciplina");
+    reset(selModulo, "Selecione o módulo");
 
     if (!selPeriodo.value) return;
 
-    const disciplinas = unico(
-      dados
-        .filter(d =>
-          d.semestre === selSemestre.value &&
-          d["período"] === selPeriodo.value
-        )
-        .map(d => d.disciplina)
+    preencher(
+      selDisciplina,
+      unico(
+        dados
+          .filter(d =>
+            d.semestre === selSemestre.value &&
+            d.periodo === selPeriodo.value
+          )
+          .map(d => d.disciplina)
+      )
     );
-
-    preencher(selDisciplina, disciplinas);
   });
 
-  /* ===============================
-     4️⃣ MÓDULO (dependente)
-  =============================== */
+  // MÓDULO
   selDisciplina.addEventListener("change", () => {
-    resetSelect(selModulo, "Selecione o módulo");
+    reset(selModulo, "Selecione o módulo");
 
     if (!selDisciplina.value) return;
 
-    const modulos = unico(
-      dados
-        .filter(d =>
-          d.semestre === selSemestre.value &&
-          d["período"] === selPeriodo.value &&
-          d.disciplina === selDisciplina.value
-        )
-        .map(d => d["módulo"])
+    preencher(
+      selModulo,
+      unico(
+        dados
+          .filter(d =>
+            d.semestre === selSemestre.value &&
+            d.periodo === selPeriodo.value &&
+            d.disciplina === selDisciplina.value
+          )
+          .map(d => d.modulo)
+      )
     );
-
-    preencher(selModulo, modulos);
   });
 </script>
-
 
 </body>
 </html>
