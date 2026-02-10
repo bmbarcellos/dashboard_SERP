@@ -24,13 +24,19 @@
       max-width: 380px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       border-top: 6px solid #003366;
+      text-align: center;
+    }
+
+    .logo {
+      max-width: 180px;
+      margin: 0 auto 16px auto;
+      display: block;
     }
 
     h2 {
       margin-top: 0;
       margin-bottom: 20px;
       color: #003366;
-      text-align: center;
       font-size: 1.3rem;
     }
 
@@ -39,6 +45,7 @@
       margin-bottom: 6px;
       font-weight: bold;
       color: #333;
+      text-align: left;
     }
 
     input {
@@ -74,7 +81,6 @@
     .footer {
       margin-top: 14px;
       font-size: 0.8rem;
-      text-align: center;
       color: #666;
     }
   </style>
@@ -83,6 +89,9 @@
 <body>
 
   <div class="container">
+    <!-- Logo UFF -->
+    <img src="logo-uff.png" alt="Universidade Federal Fluminense" class="logo">
+
     <h2>Sistema Eletrônico de Registro de Presença</h2>
 
     <form id="formLoginProfessor">
@@ -116,16 +125,12 @@
           "https://webhook.artideia.com.br/webhook/dashboard-SERP",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
           }
         );
 
         const data = await response.json();
-
-        // 🔒 normaliza resposta (array ou objeto)
         const contexto = Array.isArray(data) ? data[0] : data;
 
         if (!contexto || contexto.erro) {
@@ -133,13 +138,11 @@
           return;
         }
 
-        // salva contexto do professor
         sessionStorage.setItem(
           "serp_contexto",
           JSON.stringify(contexto)
         );
 
-        // redireciona para página 2
         window.location.href = "pagina2.html";
 
       } catch (err) {
@@ -151,4 +154,3 @@
 
 </body>
 </html>
-
