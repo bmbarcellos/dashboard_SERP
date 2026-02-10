@@ -73,7 +73,6 @@ select {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
 }
 
 table {
@@ -136,31 +135,24 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 }
 
 /* Gráficos */
-.charts-container {
-  margin-top: 30px;
-}
-
-.charts-container h3 {
-  color: #003366;
-  margin-bottom: 16px;
+.grafico-container {
+  margin-top: 24px;
 }
 
 .flex-charts {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  justify-content: flex-start;
   margin-top: 20px;
 }
 
 .flex-charts canvas {
-  flex: 0 0 48%; /* metade do container */
-  width: 100% !important; /* largura máxima do container */
-  height: auto !important; /* altura proporcional */
+  flex: 0 0 48%;
+  width: 100% !important;
+  height: auto !important;
 }
 </style>
-
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -185,9 +177,8 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
     <table id="tabelaDiario"></table>
   </div>
 
-  <div class="charts-container">
-    <h3>Estatísticas de Presença</h3>
-    <canvas id="graficoEvolucao" style="width:100%; height:300px;"></canvas>
+  <div class="grafico-container">
+    <canvas id="graficoEvolucao"></canvas>
     <div class="flex-charts">
       <canvas id="graficoProporcao"></canvas>
       <canvas id="graficoResumo"></canvas>
@@ -203,6 +194,8 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
 // ==============================
@@ -350,89 +343,86 @@ function renderizar() {
 
   tabela.innerHTML = html;
 
-  renderizarGraficos(filtrado, dias);
+  renderizarGraficos(filtrado, dias, alunos);
 }
 
 // ==============================
-// Função de renderização de gráficos
+// 6. Renderização dos gráficos
 // ==============================
 
-function renderizarGraficos(filtrado, dias) {
+function renderizarGraficos(filtrado, dias, alunos) {
+  const ctxEvolucao = document.getElementById("graficoEvolucao").getContext("2d");
+  const ctxProporcao = document.getElementById("graficoProporcao").getContext("2d");
+  const ctxResumo = document.getElementById("graficoResumo").getContext("2d");
+
+  // Limpa gráficos antigos
+  if (window.graficoEvo) window.graficoEvo.destroy();
+  if (window.graficoProp) window.graficoProp.destroy();
+  if (window.graficoRes) window.graficoRes.destroy();
+
+  // Evolução do status ao longo do tempo (linha)
   const statusPorDia = dias.map(dia => {
-    const registrosDoDia = filtrado.filter(r => r.data.split("/")[0] === dia);
-    const contagem = {confirmada:0, ForaDoRaio:0, EmailInvalido:0, Duplicada:0};
-    registrosDoDia.forEach(r => {
-      if (r.presenca) contagem.confirmada++;
-      else if (r.motivo === "Fora do raio") contagem.ForaDoRaio++;
-      else if (r.motivo === "Email invalido") contagem.EmailInvalido++;
-      else contagem.Duplicada++;
-    });
-    return contagem;
+    const registros = filtrado.filter(r => r.data.split("/")[0] === dia);
+    return {
+      confirmada: registros.filter(r => r.presenca).length,
+      fora: registros.filter(r => r.motivo === "Fora do raio").length,
+      email: registros.filter(r => r.motivo === "Email invalido").length,
+      duplicada: registros.filter(r => r.motivo === "Duplicada").length
+    };
   });
 
-  const totalStatus = {confirmada:0, ForaDoRaio:0, EmailInvalido:0, Duplicada:0};
-  filtrado.forEach(r => {
-    if (r.presenca) totalStatus.confirmada++;
-    else if (r.motivo === "Fora do raio") totalStatus.ForaDoRaio++;
-    else if (r.motivo === "Email invalido") totalStatus.EmailInvalido++;
-    else totalStatus.Duplicada++;
-  });
-
-  const coresUFF = ['#003366','#00509E','#FF8C42','#6c757d'];
-
-  // Gráfico de linha
-  const ctxEvolucao = document.getElementById('graficoEvolucao').getContext('2d');
-  new Chart(ctxEvolucao, {
+  window.graficoEvo = new Chart(ctxEvolucao, {
     type: 'line',
     data: {
       labels: dias,
       datasets: [
-        {label:'Confirmada', data: statusPorDia.map(s=>s.confirmada), borderColor:coresUFF[0], fill:false},
-        {label:'Fora do Raio', data: statusPorDia.map(s=>s.ForaDoRaio), borderColor:coresUFF[1], fill:false},
-        {label:'Email Inválido', data: statusPorDia.map(s=>s.EmailInvalido), borderColor:coresUFF[2], fill:false},
-        {label:'Duplicada', data: statusPorDia.map(s=>s.Duplicada), borderColor:coresUFF[3], fill:false}
+        { label: '✅ Confirmada', data: statusPorDia.map(s => s.confirmada), borderColor: '#00509e', backgroundColor:'#00509e33', fill:true },
+        { label: '❌ Fora do raio', data: statusPorDia.map(s => s.fora), borderColor: '#c92c2c', backgroundColor:'#c92c2c33', fill:true },
+        { label: '⚠️ Email inválido', data: statusPorDia.map(s => s.email), borderColor: '#e6a800', backgroundColor:'#e6a80033', fill:true },
+        { label: '🔁 Duplicada', data: statusPorDia.map(s => s.duplicada), borderColor: '#6c757d', backgroundColor:'#6c757d33', fill:true }
       ]
     },
-    options:{responsive:true, plugins:{title:{display:true,text:'Evolução do Status de Presença'}}}
+    options: { responsive:true, maintainAspectRatio:true, aspectRatio:2, plugins:{legend:{position:'top'}} }
   });
 
-  // Gráfico pizza
-  const ctxProporcao = document.getElementById('graficoProporcao').getContext('2d');
-  new Chart(ctxProporcao, {
-    type: 'pie',
-    data: {
-      labels:['Confirmada','Fora do Raio','Email Inválido','Duplicada'],
+  // Proporção de presenças confirmadas (pizza)
+  const totalConfirmadas = filtrado.filter(r => r.presenca).length;
+  const totalRegistros = filtrado.length;
+
+  window.graficoProp = new Chart(ctxProporcao, {
+    type:'pie',
+    data:{
+      labels:['✅ Confirmada','Outros status'],
       datasets:[{
-        data:[totalStatus.confirmada,totalStatus.ForaDoRaio,totalStatus.EmailInvalido,totalStatus.Duplicada],
-        backgroundColor: coresUFF
+        data:[totalConfirmadas,totalRegistros-totalConfirmadas],
+        backgroundColor:['#00509e','#e0f0ff']
       }]
     },
-    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.2, plugins:{title:{display:true,text:'Proporção de Status de Presença'}}}
+    options:{ responsive:true, maintainAspectRatio:true, aspectRatio:1.2 }
   });
 
-  // Gráfico barra
-  const ctxResumo = document.getElementById('graficoResumo').getContext('2d');
-  new Chart(ctxResumo, {
-    type: 'bar',
-    data: {
-      labels:['Total Alunos','Total Registros','Total Confirmadas','Total Faltas/Erros'],
+  // Resumo de status gerais (barra)
+  const contConfirmada = totalConfirmadas;
+  const contFora = filtrado.filter(r => r.motivo === "Fora do raio").length;
+  const contEmail = filtrado.filter(r => r.motivo === "Email invalido").length;
+  const contDup = filtrado.filter(r => r.motivo === "Duplicada").length;
+
+  window.graficoRes = new Chart(ctxResumo, {
+    type:'bar',
+    data:{
+      labels:['✅ Confirmada','❌ Fora do raio','⚠️ Email inválido','🔁 Duplicada'],
       datasets:[{
-        label:'Contagem',
-        data:[
-          unico(filtrado.map(r=>r.aluno)).length,
-          filtrado.length,
-          totalStatus.confirmada,
-          totalStatus.ForaDoRaio + totalStatus.EmailInvalido + totalStatus.Duplicada
-        ],
-        backgroundColor: coresUFF
+        label:'Status',
+        data:[contConfirmada,contFora,contEmail,contDup],
+        backgroundColor:['#00509e','#c92c2c','#e6a800','#6c757d']
       }]
     },
-    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.2, plugins:{title:{display:true,text:'Resumo Estatístico de Presença'}}}
+    options:{ responsive:true, maintainAspectRatio:true, aspectRatio:1.2, plugins:{legend:{display:false}} }
   });
 }
 
 // ==============================
-// 6. Primeira renderização
+// 7. Primeira renderização
 // ==============================
 
 renderizar();
