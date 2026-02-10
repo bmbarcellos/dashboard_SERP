@@ -106,9 +106,6 @@
     <label for="disciplina">Disciplina</label>
     <select id="disciplina" disabled></select>
 
-    <label for="modulo">Módulo</label>
-    <select id="modulo" disabled></select>
-
     <button type="submit">Gerar relatório</button>
   </form>
 
@@ -132,7 +129,6 @@
   const selSemestre   = document.getElementById("semestre");
   const selPeriodo    = document.getElementById("periodo");
   const selDisciplina = document.getElementById("disciplina");
-  const selModulo     = document.getElementById("modulo");
 
   const unico = (arr) => [...new Set(arr)];
 
@@ -159,7 +155,6 @@
   selSemestre.addEventListener("change", () => {
     reset(selPeriodo, "Selecione o período");
     reset(selDisciplina, "Selecione a disciplina");
-    reset(selModulo, "Selecione o módulo");
 
     if (!selSemestre.value) return;
 
@@ -172,7 +167,6 @@
   // DISCIPLINA
   selPeriodo.addEventListener("change", () => {
     reset(selDisciplina, "Selecione a disciplina");
-    reset(selModulo, "Selecione o módulo");
 
     if (!selPeriodo.value) return;
 
@@ -189,31 +183,11 @@
     );
   });
 
-  // MÓDULO
-  selDisciplina.addEventListener("change", () => {
-    reset(selModulo, "Selecione o módulo");
-
-    if (!selDisciplina.value) return;
-
-    preencher(
-      selModulo,
-      unico(
-        dados
-          .filter(d =>
-            d.semestre === selSemestre.value &&
-            d.periodo === selPeriodo.value &&
-            d.disciplina === selDisciplina.value
-          )
-          .map(d => d.modulo)
-      )
-    );
-  });
-
   // SUBMIT → novo workflow n8n
   document.getElementById("formFiltroTurma").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!selSemestre.value || !selPeriodo.value || !selDisciplina.value || !selModulo.value) {
+    if (!selSemestre.value || !selPeriodo.value || !selDisciplina.value) {
       alert("Selecione todos os campos.");
       return;
     }
@@ -222,7 +196,6 @@
       semestre: selSemestre.value,
       periodo: selPeriodo.value,
       disciplina: selDisciplina.value,
-      modulo: selModulo.value,
       professor: professor
     };
 
