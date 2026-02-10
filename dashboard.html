@@ -137,7 +137,7 @@ td.nome {
 // ==============================
 
 const dashboard = JSON.parse(sessionStorage.getItem("dashboard"));
-const semestre = sessionStorage.getItem("semestre"); // pega o semestre selecionado na página 2
+const semestreAtual = sessionStorage.getItem("semestre");
 
 if (!dashboard || !dashboard.diario_classe) {
   alert("Sessão expirada ou dados indisponíveis.");
@@ -152,6 +152,7 @@ const diario = dashboard.diario_classe;
 
 const unico = arr => [...new Set(arr)];
 const ordenarTexto = arr => arr.sort((a,b) => a.localeCompare(b));
+const extrairMes = data => data.split("/")[1];
 
 // ==============================
 // 3. Informações da turma
@@ -169,25 +170,19 @@ document.getElementById("infoTurma").innerHTML = `
 const selMes = document.getElementById("filtroMes");
 const selModulo = document.getElementById("filtroModulo");
 
-function extrairMes(data) {
-  const [, mm] = data.split("/");
-  return mm;
-}
-
 const mesesNome = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho",
   "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-// Define intervalo de meses com base no semestre
-let inicioMes = 1;
-let fimMes = 7;
-if (semestre && semestre.endsWith("_2")) {
+// Definir limite do semestre
+let inicioMes = 1, fimMes = 7;
+if (semestreAtual && semestreAtual.endsWith("_2")) {
   inicioMes = 7;
   fimMes = 12;
 }
 
-// Pega apenas meses presentes no diário e dentro do semestre correto
+// Meses disponíveis
 const mesesDisponiveis = ordenarTexto(
   unico(diario.map(d => extrairMes(d.data))).filter(m => Number(m) >= inicioMes && Number(m) <= fimMes)
 );
@@ -201,8 +196,6 @@ selMes.innerHTML =
 
 // Módulos existentes
 const modulos = unico(diario.map(d => d.modulo));
-
-// Preenche select de módulos
 selModulo.innerHTML =
   `<option value="">Todos os módulos</option>` +
   modulos.map(m => `<option value="${m}">${m}</option>`).join("");
@@ -211,28 +204,28 @@ selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
 // ==============================
-// 5. Renderização do Diário
+// 5. Renderização do Diário com total e linha final
 // ==============================
 
 function renderizar() {
-
   const mesSelecionado = selMes.value;
   const moduloSelecionado = selModulo.value;
 
   const filtrado = diario.filter(d => {
     const mes = extrairMes(d.data);
-
     return (
       (!selMes.value || mes === selMes.value) &&
-      (!selModulo.value || d.modulo === selModulo.value)
+      (!selModulo.value || d.modulo === selModulo.value) &&
+      Number(mes) >= inicioMes &&
+      Number(mes) <= fimMes
     );
   });
 
   const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
+  const dias = unico(filtrado.map(d => d.data.split("/")[0]))
+                  .sort((a,b) => Number(a) - Number(b));
 
-  const dias = unico(
-    filtrado.map(d => d.data.split("/")[0])
-  ).sort((a,b) => Number(a) - Number(b));
+  const totalDias = Math.max(...alunos.map(aluno => filtrado.filter(r => r.aluno === aluno).length));
 
   const tabela = document.getElementById("tabelaDiario");
 
@@ -241,12 +234,15 @@ function renderizar() {
     <tr>
       <th>Aluno</th>
       ${dias.map(d => `<th>${d}</th>`).join("")}
+      <th>Total</th>
     </tr>
   `;
 
   // Linhas por aluno
   alunos.forEach(aluno => {
     html += `<tr><td class="nome">${aluno}</td>`;
+
+    let totalConfirmadas = 0;
 
     dias.forEach(dia => {
       const registro = filtrado.find(r =>
@@ -257,6 +253,7 @@ function renderizar() {
       if (!registro) {
         html += `<td>-</td>`;
       } else {
+        if (registro.presenca) totalConfirmadas++;
         html += `
           <td class="${registro.motivo || 'confirmada'}">
             ${registro.presenca ? "✅" :
@@ -268,8 +265,24 @@ function renderizar() {
       }
     });
 
+    const percentual = ((totalConfirmadas / totalDias) * 100).toFixed(1);
+    html += `<td>${totalConfirmadas} ✅ (${percentual}%)</td>`;
+
     html += `</tr>`;
   });
+
+  // ==============================
+  // Linha final: total de presenças por dia
+  // ==============================
+  html += `<tr><td class="nome"><strong>Total ✅</strong></td>`;
+
+  dias.forEach(dia => {
+    const totalDia = filtrado.filter(r => r.data.split("/")[0] === dia && r.presenca).length;
+    html += `<td><strong>${totalDia}</strong></td>`;
+  });
+
+  html += `<td>-</td>`; // coluna total não precisa somar percentual
+  html += `</tr>`;
 
   tabela.innerHTML = html;
 }
