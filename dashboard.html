@@ -114,7 +114,6 @@ td.nome {
 
   <div class="filters">
     <select id="filtroMes"></select>
-    <select id="filtroModulo"></select>
   </div>
 
   <div class="table-wrapper">
@@ -144,6 +143,7 @@ if (!dashboard || !dashboard.diario_classe) {
 }
 
 const diario = dashboard.diario_classe;
+const semestre = dashboard.semestre || "2026_1"; // fallback se não existir
 
 // ==============================
 // 2. Helpers
@@ -166,7 +166,6 @@ document.getElementById("infoTurma").innerHTML = `
 // ==============================
 
 const selMes = document.getElementById("filtroMes");
-const selModulo = document.getElementById("filtroModulo");
 
 function extrairMes(data) {
   const [, mm] = data.split("/");
@@ -178,28 +177,30 @@ const mesesNome = [
   "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-// Pega apenas meses presentes no diário e que estão no 1º semestre
+// Define faixa de meses com base no semestre
+let faixaMeses;
+if (semestre.endsWith("_1")) {
+  faixaMeses = [1,2,3,4,5,6,7];   // 1º semestre
+} else if (semestre.endsWith("_2")) {
+  faixaMeses = [7,8,9,10,11,12]; // 2º semestre
+} else {
+  faixaMeses = [1,2,3,4,5,6,7,8,9,10,11,12]; // fallback: todos
+}
+
+// Pega apenas meses presentes no diário e dentro da faixa do semestre
 const mesesDisponiveis = ordenarTexto(
-  unico(diario.map(d => extrairMes(d.data))).filter(m => Number(m) >= 1 && Number(m) <= 7)
+  unico(diario.map(d => Number(extrairMes(d.data))))
+    .filter(m => faixaMeses.includes(m))
 );
 
 // Preenche select de meses
 selMes.innerHTML =
   `<option value="">Todos os meses</option>` +
   mesesDisponiveis
-    .map(m => `<option value="${m}">${mesesNome[Number(m) - 1]}</option>`)
+    .map(m => `<option value="${m}">${mesesNome[m - 1]}</option>`)
     .join("");
 
-// Módulos existentes
-const modulos = unico(diario.map(d => d.modulo));
-
-// Preenche select de módulos com "Todos os módulos" selecionado por padrão
-selModulo.innerHTML =
-  `<option value="" selected>Todos os módulos</option>` +
-  modulos.map(m => `<option value="${m}">${m}</option>`).join("");
-
 selMes.addEventListener("change", renderizar);
-selModulo.addEventListener("change", renderizar);
 
 // ==============================
 // 5. Renderização do Diário
@@ -208,15 +209,10 @@ selModulo.addEventListener("change", renderizar);
 function renderizar() {
 
   const mesSelecionado = selMes.value;
-  const moduloSelecionado = selModulo.value;
 
   const filtrado = diario.filter(d => {
     const mes = extrairMes(d.data);
-
-    return (
-      (!selMes.value || mes === selMes.value) &&
-      (!selModulo.value || d.modulo === selModulo.value)
-    );
+    return (!selMes.value || mes === selMes.value);
   });
 
   const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
