@@ -193,9 +193,9 @@ selMes.innerHTML =
 // Módulos existentes
 const modulos = unico(diario.map(d => d.modulo));
 
-// Preenche select de módulos
+// Preenche select de módulos com "Todos os módulos" selecionado por padrão
 selModulo.innerHTML =
-  `<option value="">Todos os módulos</option>` +
+  `<option value="" selected>Todos os módulos</option>` +
   modulos.map(m => `<option value="${m}">${m}</option>`).join("");
 
 selMes.addEventListener("change", renderizar);
