@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Seleção da Turma</title>
+  <title>Diário de Classe</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -28,17 +28,18 @@
 
     h2 {
       margin-top: 0;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       color: #003366;
       text-align: center;
       font-size: 1.3rem;
     }
 
-    .professor {
+    .boas-vindas {
       text-align: center;
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 20px;
+      font-size: 0.95rem;
+      color: #444;
+      margin-bottom: 22px;
+      line-height: 1.4;
     }
 
     label {
@@ -93,7 +94,8 @@
   <div class="container">
     <h2>Diário de Classe</h2>
 
-    <div class="professor" id="infoProfessor"></div>
+    <!-- Mensagem de boas-vindas -->
+    <div class="boas-vindas" id="boasVindas"></div>
 
     <form id="formFiltroTurma">
       <label for="semestre">Semestre</label>
@@ -117,15 +119,24 @@
   </div>
 
   <script>
-    const contexto = JSON.parse(sessionStorage.getItem("serp_contexto"));
+    // Recupera contexto da Página 1
+    const contexto = JSON.parse(
+      sessionStorage.getItem("serp_contexto")
+    );
 
     if (!contexto) {
       alert("Sessão expirada. Faça login novamente.");
       window.location.href = "index.html";
     }
 
-    document.getElementById("infoProfessor").innerText =
-      `Professor(a): ${contexto.nome}`;
+    // Mensagem de boas-vindas personalizada
+    document.getElementById("boasVindas").innerHTML = `
+      <strong>Professor(a) ${contexto.nome}</strong>, seja bem-vindo(a) ao
+      <strong>Sistema Eletrônico de Registro de Presença</strong>.<br>
+      <span style="font-size:0.85rem; color:#555;">
+        Matrícula: ${contexto.matricula}
+      </span>
+    `;
 
     const selects = {
       semestre: document.getElementById("semestre"),
@@ -160,9 +171,9 @@
         const data = await response.json();
         const filtros = Array.isArray(data) ? data[0] : data;
 
-        preencherSelect(selects.semestre, filtros.semestres);
-        preencherSelect(selects.periodo, filtros.periodos);
-        preencherSelect(selects.disciplina, filtros.disciplinas);
+        preencherSelect(selects.semestre, filtros.semestres || []);
+        preencherSelect(selects.periodo, filtros.periodos || []);
+        preencherSelect(selects.disciplina, filtros.disciplinas || []);
         preencherSelect(selects.modulo, filtros.modulos || []);
 
       } catch (err) {
