@@ -119,107 +119,96 @@
   </div>
 
   <script>
-  const professor = JSON.parse(sessionStorage.getItem("professor"));
-  const curriculo = JSON.parse(sessionStorage.getItem("curriculo"));
+  const dados = JSON.parse(sessionStorage.getItem("serp_contexto")) || [];
 
-  if (!professor || !curriculo) {
-    alert("Sessão expirada. Faça login novamente.");
-    window.location.href = "index.html";
-  }
+  const selSemestre   = document.getElementById("semestre");
+  const selPeriodo    = document.getElementById("periodo");
+  const selDisciplina = document.getElementById("disciplina");
+  const selModulo     = document.getElementById("modulo");
 
-  // Boas-vindas
-  document.getElementById("boasVindas").innerHTML = `
-    <strong>Professor(a) ${professor.nome}</strong>, seja bem-vindo(a) ao
-    <strong>Sistema Eletrônico de Registro de Presença</strong>.<br>
-    <span style="font-size:0.85rem; color:#555;">
-      Matrícula: ${professor.matricula}
-    </span>
-  `;
+  const unico = (arr) => [...new Set(arr)];
 
-  const selects = {
-    semestre: document.getElementById("semestre"),
-    periodo: document.getElementById("periodo"),
-    disciplina: document.getElementById("disciplina"),
-    modulo: document.getElementById("modulo")
-  };
-
-  function limparSelect(select, placeholder) {
+  function resetSelect(select, placeholder, disabled = true) {
     select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.disabled = disabled;
   }
 
-  function valoresUnicos(campo, filtro = {}) {
-    return [...new Set(
-      curriculo
-        .filter(item =>
-          Object.keys(filtro).every(k => item[k] === filtro[k])
-        )
-        .map(item => item[campo])
-    )];
-  }
-
-  function popular(select, valores, placeholder) {
-    limparSelect(select, placeholder);
+  function preencher(select, valores) {
     valores.forEach(v => {
       const opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
       select.appendChild(opt);
     });
+    select.disabled = false;
   }
 
-  // Inicial
-  popular(selects.semestre, valoresUnicos("semestre"), "Selecione o semestre");
+  /* ===============================
+     1️⃣ SEMESTRE
+  =============================== */
+  const semestres = unico(dados.map(d => d.semestre));
+  resetSelect(selSemestre, "Selecione o semestre", false);
+  preencher(selSemestre, semestres);
 
-  // Encadeamento
-  selects.semestre.addEventListener("change", () => {
-    popular(
-      selects.periodo,
-      valoresUnicos("período", { semestre: selects.semestre.value }),
-      "Selecione o período"
+  /* ===============================
+     2️⃣ PERÍODO (dependente)
+  =============================== */
+  selSemestre.addEventListener("change", () => {
+    resetSelect(selPeriodo, "Selecione o período");
+    resetSelect(selDisciplina, "Selecione a disciplina");
+    resetSelect(selModulo, "Selecione o módulo");
+
+    if (!selSemestre.value) return;
+
+    const periodos = unico(
+      dados
+        .filter(d => d.semestre === selSemestre.value)
+        .map(d => d["período"])
     );
-    limparSelect(selects.disciplina, "Selecione a disciplina");
-    limparSelect(selects.modulo, "Selecione o módulo");
+
+    preencher(selPeriodo, periodos);
   });
 
-  selects.periodo.addEventListener("change", () => {
-    popular(
-      selects.disciplina,
-      valoresUnicos("disciplina", {
-        semestre: selects.semestre.value,
-        período: selects.periodo.value
-      }),
-      "Selecione a disciplina"
+  /* ===============================
+     3️⃣ DISCIPLINA (dependente)
+  =============================== */
+  selPeriodo.addEventListener("change", () => {
+    resetSelect(selDisciplina, "Selecione a disciplina");
+    resetSelect(selModulo, "Selecione o módulo");
+
+    if (!selPeriodo.value) return;
+
+    const disciplinas = unico(
+      dados
+        .filter(d =>
+          d.semestre === selSemestre.value &&
+          d["período"] === selPeriodo.value
+        )
+        .map(d => d.disciplina)
     );
-    limparSelect(selects.modulo, "Selecione o módulo");
+
+    preencher(selDisciplina, disciplinas);
   });
 
-  selects.disciplina.addEventListener("change", () => {
-    popular(
-      selects.modulo,
-      valoresUnicos("módulo", {
-        semestre: selects.semestre.value,
-        período: selects.periodo.value,
-        disciplina: selects.disciplina.value
-      }),
-      "Selecione o módulo"
+  /* ===============================
+     4️⃣ MÓDULO (dependente)
+  =============================== */
+  selDisciplina.addEventListener("change", () => {
+    resetSelect(selModulo, "Selecione o módulo");
+
+    if (!selDisciplina.value) return;
+
+    const modulos = unico(
+      dados
+        .filter(d =>
+          d.semestre === selSemestre.value &&
+          d["período"] === selPeriodo.value &&
+          d.disciplina === selDisciplina.value
+        )
+        .map(d => d["módulo"])
     );
-  });
 
-  // Botão
-  document.getElementById("gerarRelatorio").addEventListener("click", () => {
-    if (!selects.modulo.value) {
-      alert("Selecione todos os campos.");
-      return;
-    }
-
-    sessionStorage.setItem("filtro_turma", JSON.stringify({
-      semestre: selects.semestre.value,
-      periodo: selects.periodo.value,
-      disciplina: selects.disciplina.value,
-      modulo: selects.modulo.value
-    }));
-
-    window.location.href = "relatorio.html";
+    preencher(selModulo, modulos);
   });
 </script>
 
