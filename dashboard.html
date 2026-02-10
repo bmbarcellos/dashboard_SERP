@@ -149,13 +149,13 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
+  margin-top: 20px; /* espaço extra entre linha e os gráficos menores */
 }
 
 .flex-charts canvas {
-  flex: 1;
-  min-width: 300px;
-  max-width: 600px;
-  height: 300px;
+  flex: 0 0 48%; /* metade do container */
+  min-width: 200px;
+  height: 250px;
 }
 </style>
 
@@ -350,9 +350,6 @@ function renderizar() {
 
   tabela.innerHTML = html;
 
-  // ==============================
-  // Gráficos
-  // ==============================
   renderizarGraficos(filtrado, dias);
 }
 
