@@ -26,24 +26,33 @@ h2 {
 .info-box {
   background: #e6f0fa;
   border-left: 6px solid #00509e;
-  padding: 14px 14px 14px 20px;
+  padding: 14px 20px;
   border-radius: 6px;
   margin-bottom: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .info-text {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.95rem;
+}
+
+.info-text strong {
+  font-weight: bold;
 }
 
 .filters {
   display: flex;
   gap: 16px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 select {
@@ -91,45 +100,29 @@ td.nome {
 td.matricula {
   background: #f7f9fc;
   position: sticky;
-  left: 200px; /* ajusta conforme largura do nome */
+  left: 200px;
   z-index: 1;
 }
 
 /* Status visual */
-.confirmada {
-  background: #d4edda;
-}
-
-.Fora\ do\ raio {
-  background: #f8d7da;
-}
-
-.Email\ invalido {
-  background: #fff3cd;
-}
-
-.Duplicada {
-  background: #e2e3e5;
-}
+.confirmada { background: #d4edda; }
+.Fora\ do\ raio { background: #f8d7da; }
+.Email\ invalido { background: #fff3cd; }
+.Duplicada { background: #e2e3e5; }
 
 /* Destaques especiais */
-td.total, th.total {
-  background: #e0f0ff; /* tom suave azul */
-  font-weight: bold;
-}
-
-tr.total-linha {
-  background: #f0f4f8; /* tom suave cinza */
-  font-weight: bold;
-}
+td.total, th.total { background: #e0f0ff; font-weight: bold; }
+tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
 .legenda {
   margin-top: 14px;
   font-size: 0.85rem;
 }
 
+/* Logo proporcional ao texto */
 .info-box img {
-  height: 60px;
+  height: auto;
+  max-height: 70px; /* ajusta conforme altura do texto */
   object-fit: contain;
 }
 </style>
@@ -139,7 +132,7 @@ tr.total-linha {
 
 <div class="container">
 
-  <h2>Diário de Classe</h2>
+  <h2>SERP - Diário de Classe</h2>
 
   <div class="info-box">
     <div class="info-text" id="infoTurma"></div>
