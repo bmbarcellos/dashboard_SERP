@@ -165,15 +165,23 @@ document.getElementById("infoTurma").innerHTML = `
 // 4. Preparação de filtros
 // ==============================
 
+const selMes = document.getElementById("filtroMes");
+const selModulo = document.getElementById("filtroModulo");
+
 function extrairMes(data) {
   const [, mm] = data.split("/");
   return mm;
 }
 
 const mesesNome = [
-  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho",
+  "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
+
+// Pega apenas meses presentes no diário e que estão no 1º semestre
+const mesesDisponiveis = ordenarTexto(
+  unico(diario.map(d => extrairMes(d.data))).filter(m => Number(m) >= 1 && Number(m) <= 7)
+);
 
 // Preenche select de meses
 selMes.innerHTML =
@@ -193,7 +201,6 @@ selModulo.innerHTML =
 selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
-
 // ==============================
 // 5. Renderização do Diário
 // ==============================
@@ -204,14 +211,13 @@ function renderizar() {
   const moduloSelecionado = selModulo.value;
 
   const filtrado = diario.filter(d => {
-  const mes = extrairMes(d.data);
+    const mes = extrairMes(d.data);
 
-  return (
-    (!selMes.value || mes === selMes.value) &&
-    (!selModulo.value || d.modulo === selModulo.value)
-  );
-});
-
+    return (
+      (!selMes.value || mes === selMes.value) &&
+      (!selModulo.value || d.modulo === selModulo.value)
+    );
+  });
 
   const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
 
