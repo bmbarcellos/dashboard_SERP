@@ -68,13 +68,11 @@ select {
   font-size: 0.95rem;
 }
 
-/* ===================== TABELAS ===================== */
 .table-wrapper {
   overflow-x: auto;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
 }
 
 table {
@@ -137,7 +135,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   object-fit: contain;
 }
 
-/* ===================== GRÁFICOS ===================== */
+/* Gráficos */
 #grafico-container {
   display: flex;
   flex-direction: column;
@@ -153,6 +151,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   display: flex;
   gap: 20px;
   justify-content: flex-start;
+  height: 250px; /* altura fixa para manter proporção */
 }
 
 #graficoLinha {
@@ -165,29 +164,29 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   height: 250px;
 }
 
-/* ===================== TABELA DE CONFERÊNCIA ===================== */
+/* Tabela de conferência adicional */
 .table-conferencia-wrapper {
   overflow-x: auto;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
-#tabelaConferencia {
+table.conferencia {
   border-collapse: collapse;
   width: 100%;
   min-width: 1200px;
 }
 
-#tabelaConferencia th, #tabelaConferencia td {
+table.conferencia th, table.conferencia td {
   border: 1px solid #ddd;
   padding: 6px;
   font-size: 0.85rem;
   text-align: center;
 }
 
-#tabelaConferencia th {
+table.conferencia th {
   background: #003366;
   color: #fff;
   position: sticky;
@@ -199,6 +198,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 </head>
 
 <body>
+
 <div class="container">
 
   <h2>SERP - Diário de Classe</h2>
@@ -228,7 +228,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   <!-- Gráficos -->
   <div id="grafico-container">
     <div id="grafico-linha-wrapper">
-      <canvas id="graficoLinha"></canvas>
+      <canvas id="graficoLinha" width="1200" height="300"></canvas>
     </div>
     <div id="grafico-secundario-wrapper">
       <canvas id="graficoPizza"></canvas>
@@ -236,20 +236,20 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
     </div>
   </div>
 
-  <!-- Tabela de Conferência -->
+  <!-- Tabela de conferência detalhada -->
   <div class="table-conferencia-wrapper">
-    <table id="tabelaConferencia">
+    <table class="conferencia" id="tabelaConferencia">
       <thead>
         <tr>
           <th>Data</th>
           <th>Horário Aula</th>
-          <th>Palavra-chave</th>
-          <th>IP Origem</th>
           <th>Aluno</th>
           <th>Matrícula</th>
           <th>Disciplina</th>
           <th>Módulo</th>
           <th>Status</th>
+          <th>Palavra-chave</th>
+          <th>IP Origem</th>
           <th>Ocorrências</th>
         </tr>
       </thead>
@@ -262,8 +262,9 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // ==============================
-// Dados da sessão
+// 1. Dados e semestre
 // ==============================
+
 const dashboard = JSON.parse(sessionStorage.getItem("dashboard"));
 const semestreAtual = sessionStorage.getItem("semestre");
 const professor = JSON.parse(sessionStorage.getItem("professor"));
@@ -276,15 +277,17 @@ if (!dashboard || !dashboard.diario_classe) {
 const diario = dashboard.diario_classe;
 
 // ==============================
-// Helpers
+// 2. Helpers
 // ==============================
+
 const unico = arr => [...new Set(arr)];
 const ordenarTexto = arr => arr.sort((a,b) => a.localeCompare(b));
 const extrairMes = data => data.split("/")[1];
 
 // ==============================
-// Informações da turma + professor
+// 3. Informações da turma + professor
 // ==============================
+
 const infoTurma = document.getElementById("infoTurma");
 infoTurma.innerHTML = `
   <div class="info-line"><strong>Professor(a):</strong> <span>${professor.nome}</span></div>
@@ -293,8 +296,9 @@ infoTurma.innerHTML = `
 `;
 
 // ==============================
-// Preparação de filtros
+// 4. Preparação de filtros
 // ==============================
+
 const selMes = document.getElementById("filtroMes");
 const selModulo = document.getElementById("filtroModulo");
 
@@ -305,7 +309,8 @@ const mesesNome = [
 
 let inicioMes = 1, fimMes = 7;
 if (semestreAtual && semestreAtual.endsWith("_2")) {
-  inicioMes = 7; fimMes = 12;
+  inicioMes = 7;
+  fimMes = 12;
 }
 
 const mesesDisponiveis = ordenarTexto(
@@ -314,7 +319,9 @@ const mesesDisponiveis = ordenarTexto(
 
 selMes.innerHTML =
   `<option value="">Todos os meses</option>` +
-  mesesDisponiveis.map(m => `<option value="${m}">${mesesNome[Number(m)-1]}</option>`).join("");
+  mesesDisponiveis
+    .map(m => `<option value="${m}">${mesesNome[Number(m) - 1]}</option>`)
+    .join("");
 
 const modulos = unico(diario.map(d => d.modulo));
 selModulo.innerHTML =
@@ -325,109 +332,171 @@ selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
 // ==============================
-// Renderização do Diário e gráficos
+// 5. Renderização do Diário
 // ==============================
+
 function renderizar() {
   const mesSelecionado = selMes.value;
   const moduloSelecionado = selModulo.value;
 
   const filtrado = diario.filter(d => {
     const mes = extrairMes(d.data);
-    return (!mesSelecionado || mes===mesSelecionado) &&
-           (!moduloSelecionado || d.modulo===moduloSelecionado) &&
-           Number(mes)>=inicioMes && Number(mes)<=fimMes;
+    return (
+      (!selMes.value || mes === selMes.value) &&
+      (!selModulo.value || d.modulo === selModulo.value) &&
+      Number(mes) >= inicioMes &&
+      Number(mes) <= fimMes
+    );
   });
 
   const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
   const dias = unico(filtrado.map(d => d.data.split("/")[0]))
-                  .sort((a,b)=>Number(a)-Number(b));
-  const totalDias = Math.max(...alunos.map(a=>filtrado.filter(r=>r.aluno===a).length));
+                  .sort((a,b) => Number(a) - Number(b));
 
-  // -------- Diário resumido ----------
+  const totalDias = Math.max(...alunos.map(aluno => filtrado.filter(r => r.aluno === aluno).length));
+
   const tabela = document.getElementById("tabelaDiario");
-  let html = `<tr><th>Aluno</th><th>Matrícula</th>${dias.map(d=>`<th>${d}</th>`).join("")}<th class="total">Total</th></tr>`;
 
-  alunos.forEach(aluno=>{
+  let html = `
+    <tr>
+      <th>Aluno</th>
+      <th>Matrícula</th>
+      ${dias.map(d => `<th>${d}</th>`).join("")}
+      <th class="total">Total</th>
+    </tr>
+  `;
+
+  alunos.forEach(aluno => {
     html += `<tr><td class="nome">${aluno}</td>`;
-    const matricula = filtrado.find(r=>r.aluno===aluno)?.matricula || "-";
+    const matricula = filtrado.find(r => r.aluno === aluno)?.matricula || "-";
     html += `<td class="matricula">${matricula}</td>`;
 
-    let totalConfirmadas=0;
-    dias.forEach(dia=>{
-      const registro = filtrado.find(r=>r.aluno===aluno && r.data.split("/")[0]===dia);
-      if(!registro) html+=`<td>-</td>`;
+    let totalConfirmadas = 0;
+
+    dias.forEach(dia => {
+      const registro = filtrado.find(r =>
+        r.aluno === aluno &&
+        r.data.split("/")[0] === dia
+      );
+      if (!registro) html += `<td>-</td>`;
       else {
-        if(registro.presenca) totalConfirmadas++;
-        html+=`<td class="${registro.motivo || 'confirmada'}">${registro.presenca?"✅":
-        registro.motivo==="Fora do raio"?"❌":registro.motivo==="Email invalido"?"⚠️":"🔁"}</td>`;
+        if (registro.presenca) totalConfirmadas++;
+        html += `
+          <td class="${registro.motivo || 'confirmada'}">
+            ${registro.presenca ? "✅" :
+              registro.motivo === "Fora do raio" ? "❌" :
+              registro.motivo === "Email invalido" ? "⚠️" :
+              "🔁"}
+          </td>
+        `;
       }
     });
-    const percentual=((totalConfirmadas/totalDias)*100).toFixed(1);
-    html+=`<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td></tr>`;
+
+    const percentual = ((totalConfirmadas / totalDias) * 100).toFixed(1);
+    html += `<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td>`;
+    html += `</tr>`;
   });
 
-  html+=`<tr class="total-linha"><td class="nome">Total ✅</td><td></td>`;
-  dias.forEach(d=>{
-    const totalDia = filtrado.filter(r=>r.data.split("/")[0]===d && r.presenca).length;
-    html+=`<td class="total">${totalDia}</td>`;
+  html += `<tr class="total-linha"><td class="nome">Total ✅</td><td></td>`;
+  dias.forEach(dia => {
+    const totalDia = filtrado.filter(r => r.data.split("/")[0] === dia && r.presenca).length;
+    html += `<td class="total">${totalDia}</td>`;
   });
-  html+=`<td class="total"></td></tr>`;
+  html += `<td class="total"></td></tr>`;
+
   tabela.innerHTML = html;
 
-  // -------- Gráficos ---------
-  const statusMap = { confirmada:"Presença", "Fora do raio":"Fora do raio", "Email invalido":"Email inválido", Duplicada:"Duplicada" };
+  // ==============================
+  // Gráficos
+  // ==============================
+
+  const statusMap = { confirmada: "Presença", "Fora do raio": "Fora do raio", "Email invalido": "Email inválido", Duplicada: "Duplicada" };
+
+  // Linha: evolução de presenças
   const diasOrdenados = dias;
-  const presencaPorDia = diasOrdenados.map(d=>filtrado.filter(r=>r.data.split("/")[0]===d && r.presenca).length);
+  const presencaPorDia = diasOrdenados.map(d => filtrado.filter(r => r.data.split("/")[0]===d && r.presenca).length);
 
   const ctxLinha = document.getElementById("graficoLinha").getContext("2d");
-  if(window.chartLinha) window.chartLinha.destroy();
-  window.chartLinha = new Chart(ctxLinha,{
-    type:"line",
-    data:{ labels:diasOrdenados, datasets:[{label:"Presenças Confirmadas",data:presencaPorDia,backgroundColor:"#00509e33",borderColor:"#00509e",borderWidth:2,fill:true}]},
-    options:{responsive:false, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
+  if (window.chartLinha) window.chartLinha.destroy();
+  window.chartLinha = new Chart(ctxLinha, {
+    type: "line",
+    data: {
+      labels: diasOrdenados,
+      datasets: [{
+        label: "Presenças Confirmadas",
+        data: presencaPorDia,
+        backgroundColor: "#00509e33",
+        borderColor: "#00509e",
+        borderWidth: 2,
+        fill: true
+      }]
+    },
+    options: { responsive:false, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }
   });
 
-  const statusCounts = { "Presença":0,"Fora do raio":0,"Email inválido":0,"Duplicada":0 };
-  filtrado.forEach(r=>{ if(r.presenca) statusCounts["Presença"]++; else statusCounts[statusMap[r.motivo]||"Duplicada"]++; });
+  // Pizza: proporção de status
+  const statusCounts = { "Presença":0, "Fora do raio":0, "Email inválido":0, "Duplicada":0 };
+  filtrado.forEach(r => {
+    if (r.presenca) statusCounts["Presença"]++;
+    else statusCounts[statusMap[r.motivo] || "Duplicada"]++;
+  });
 
   const ctxPizza = document.getElementById("graficoPizza").getContext("2d");
-  if(window.chartPizza) window.chartPizza.destroy();
-  window.chartPizza = new Chart(ctxPizza,{type:"pie",data:{labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:["#00509e","#f03e3e","#f5c242","#6c757d"]}]},options:{responsive:false, maintainAspectRatio:true}});
-
-  const totalAlunos=alunos.length;
-  const totalConfirmadas=filtrado.filter(r=>r.presenca).length;
-  const ctxBarra=document.getElementById("graficoBarra").getContext("2d");
-  if(window.chartBarra) window.chartBarra.destroy();
-  window.chartBarra=new Chart(ctxBarra,{type:"bar",data:{labels:["Total de Alunos","Total Presenças"],datasets:[{label:"Quantidade",data:[totalAlunos,totalConfirmadas],backgroundColor:["#00509e","#28a745"]}]},options:{responsive:false, maintainAspectRatio:true, scales:{y:{beginAtZero:true}}}});
-
-  // -------- Tabela de Conferência Detalhada ---------
-  const tabelaConfBody = document.querySelector("#tabelaConferencia tbody");
-  tabelaConfBody.innerHTML = "";
-  filtrado.forEach(r=>{
-    const auditoria = r.auditoria || {};
-    const ocorrencias=[];
-    if(auditoria.email_invalido) ocorrencias.push(`Email inválido: ${auditoria.email_invalido}`);
-    if(auditoria.distancia_m) ocorrencias.push(`Distância: ${auditoria.distancia_m}m`);
-    if(auditoria.horario_errado) ocorrencias.push(`Horário errado: ${auditoria.horario_errado}`);
-    tabelaConfBody.innerHTML += `
-      <tr>
-        <td>${r.data}</td>
-        <td>${r.horario_aula || ""}</td>
-        <td>${auditoria.palavra_chave || ""}</td>
-        <td>${auditoria.ip_origem || ""}</td>
-        <td>${r.aluno || ""}</td>
-        <td>${r.matricula || ""}</td>
-        <td>${r.disciplina || ""}</td>
-        <td>${r.modulo || ""}</td>
-        <td>${r.presenca?"✅":r.motivo==="Fora do raio"?"❌":r.motivo==="Email invalido"?"⚠️":"🔁"}</td>
-        <td>${ocorrencias.join(", ")}</td>
-      </tr>`;
+  if (window.chartPizza) window.chartPizza.destroy();
+  window.chartPizza = new Chart(ctxPizza, {
+    type: "pie",
+    data: { labels: Object.keys(statusCounts), datasets:[{ data: Object.values(statusCounts), backgroundColor:["#00509e","#f03e3e","#f5c242","#6c757d"] }] },
+    options: { responsive:false, maintainAspectRatio:false }
   });
 
+  // Barra: estatísticas básicas
+  const totalAlunos = alunos.length;
+  const totalConfirmadas = filtrado.filter(r => r.presenca).length;
+  const ctxBarra = document.getElementById("graficoBarra").getContext("2d");
+  if (window.chartBarra) window.chartBarra.destroy();
+  window.chartBarra = new Chart(ctxBarra, {
+    type: "bar",
+    data: { labels:["Total de Alunos","Total Presenças"], datasets:[{ label:"Quantidade", data:[totalAlunos,totalConfirmadas], backgroundColor:["#00509e","#28a745"] }] },
+    options: { responsive:false, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }
+  });
+
+  // ==============================
+  // Tabela de conferência
+  // ==============================
+
+  const tbodyConferencia = document.querySelector("#tabelaConferencia tbody");
+  tbodyConferencia.innerHTML = "";
+
+  filtrado.forEach(r => {
+    const ocorrencias = [
+      r.auditoria?.email_invalido || "",
+      r.auditoria?.distancia_m || "",
+      r.auditoria?.horario_errado || ""
+    ].filter(v => v).join(" | ");
+
+    tbodyConferencia.innerHTML += `
+      <tr>
+        <td>${r.data}</td>
+        <td>${r.horario_aula}</td>
+        <td>${r.aluno || "-"}</td>
+        <td>${r.matricula || "-"}</td>
+        <td>${r.disciplina}</td>
+        <td>${r.modulo}</td>
+        <td>${r.presenca ? "Confirmada" : r.motivo || "Inválida"}</td>
+        <td>${r.auditoria?.palavra_chave || ""}</td>
+        <td>${r.auditoria?.ip_origem || ""}</td>
+        <td>${ocorrencias}</td>
+      </tr>
+    `;
+  });
 }
 
+// ==============================
 // Primeira renderização
+// ==============================
+
 renderizar();
 </script>
+
 </body>
 </html>
