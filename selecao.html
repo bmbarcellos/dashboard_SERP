@@ -119,92 +119,110 @@
   </div>
 
   <script>
-    // Recupera contexto da Página 1
-    const contexto = JSON.parse(
-      sessionStorage.getItem("serp_contexto")
+  const professor = JSON.parse(sessionStorage.getItem("professor"));
+  const curriculo = JSON.parse(sessionStorage.getItem("curriculo"));
+
+  if (!professor || !curriculo) {
+    alert("Sessão expirada. Faça login novamente.");
+    window.location.href = "index.html";
+  }
+
+  // Boas-vindas
+  document.getElementById("boasVindas").innerHTML = `
+    <strong>Professor(a) ${professor.nome}</strong>, seja bem-vindo(a) ao
+    <strong>Sistema Eletrônico de Registro de Presença</strong>.<br>
+    <span style="font-size:0.85rem; color:#555;">
+      Matrícula: ${professor.matricula}
+    </span>
+  `;
+
+  const selects = {
+    semestre: document.getElementById("semestre"),
+    periodo: document.getElementById("periodo"),
+    disciplina: document.getElementById("disciplina"),
+    modulo: document.getElementById("modulo")
+  };
+
+  function limparSelect(select, placeholder) {
+    select.innerHTML = `<option value="">${placeholder}</option>`;
+  }
+
+  function valoresUnicos(campo, filtro = {}) {
+    return [...new Set(
+      curriculo
+        .filter(item =>
+          Object.keys(filtro).every(k => item[k] === filtro[k])
+        )
+        .map(item => item[campo])
+    )];
+  }
+
+  function popular(select, valores, placeholder) {
+    limparSelect(select, placeholder);
+    valores.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      select.appendChild(opt);
+    });
+  }
+
+  // Inicial
+  popular(selects.semestre, valoresUnicos("semestre"), "Selecione o semestre");
+
+  // Encadeamento
+  selects.semestre.addEventListener("change", () => {
+    popular(
+      selects.periodo,
+      valoresUnicos("período", { semestre: selects.semestre.value }),
+      "Selecione o período"
     );
+    limparSelect(selects.disciplina, "Selecione a disciplina");
+    limparSelect(selects.modulo, "Selecione o módulo");
+  });
 
-    if (!contexto) {
-      alert("Sessão expirada. Faça login novamente.");
-      window.location.href = "index.html";
+  selects.periodo.addEventListener("change", () => {
+    popular(
+      selects.disciplina,
+      valoresUnicos("disciplina", {
+        semestre: selects.semestre.value,
+        período: selects.periodo.value
+      }),
+      "Selecione a disciplina"
+    );
+    limparSelect(selects.modulo, "Selecione o módulo");
+  });
+
+  selects.disciplina.addEventListener("change", () => {
+    popular(
+      selects.modulo,
+      valoresUnicos("módulo", {
+        semestre: selects.semestre.value,
+        período: selects.periodo.value,
+        disciplina: selects.disciplina.value
+      }),
+      "Selecione o módulo"
+    );
+  });
+
+  // Botão
+  document.getElementById("gerarRelatorio").addEventListener("click", () => {
+    if (!selects.modulo.value) {
+      alert("Selecione todos os campos.");
+      return;
     }
 
-    // Mensagem de boas-vindas personalizada
-    document.getElementById("boasVindas").innerHTML = `
-      <strong>Professor(a) ${contexto.nome}</strong>, seja bem-vindo(a) ao
-      <strong>Sistema Eletrônico de Registro de Presença</strong>.<br>
-      <span style="font-size:0.85rem; color:#555;">
-        Matrícula: ${contexto.matricula}
-      </span>
-    `;
+    sessionStorage.setItem("filtro_turma", JSON.stringify({
+      semestre: selects.semestre.value,
+      periodo: selects.periodo.value,
+      disciplina: selects.disciplina.value,
+      modulo: selects.modulo.value
+    }));
 
-    const selects = {
-      semestre: document.getElementById("semestre"),
-      periodo: document.getElementById("periodo"),
-      disciplina: document.getElementById("disciplina"),
-      modulo: document.getElementById("modulo")
-    };
+    window.location.href = "diario.html";
+  });
+</script>
 
-    function preencherSelect(select, lista) {
-      select.innerHTML = '<option value="">Selecione</option>';
-      lista.forEach(item => {
-        const opt = document.createElement("option");
-        opt.value = item;
-        opt.textContent = item;
-        select.appendChild(opt);
-      });
-    }
-
-    async function carregarFiltros() {
-      try {
-        const response = await fetch(
-          "https://webhook.artideia.com.br/webhook/serp-filtros",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              professor_id: contexto.professor_id
-            })
-          }
-        );
-
-        const data = await response.json();
-        const filtros = Array.isArray(data) ? data[0] : data;
-
-        preencherSelect(selects.semestre, filtros.semestres || []);
-        preencherSelect(selects.periodo, filtros.periodos || []);
-        preencherSelect(selects.disciplina, filtros.disciplinas || []);
-        preencherSelect(selects.modulo, filtros.modulos || []);
-
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao carregar filtros.");
-      }
-    }
-
-    carregarFiltros();
-
-    document
-      .getElementById("formFiltroTurma")
-      .addEventListener("submit", (e) => {
-        e.preventDefault();
-
-        const payload = {
-          professor_id: contexto.professor_id,
-          semestre: selects.semestre.value,
-          periodo: selects.periodo.value,
-          disciplina: selects.disciplina.value,
-          modulo: selects.modulo.value
-        };
-
-        sessionStorage.setItem(
-          "serp_filtro_turma",
-          JSON.stringify(payload)
-        );
-
-        window.location.href = "pagina3.html";
-      });
-  </script>
 
 </body>
 </html>
