@@ -28,18 +28,33 @@
 
     h2 {
       margin-top: 0;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       color: #003366;
       text-align: center;
       font-size: 1.3rem;
     }
 
-    .boas-vindas {
-      text-align: center;
-      font-size: 0.95rem;
-      color: #444;
+    /* 🔵 NOVO CONTAINER DE BOAS-VINDAS */
+    .boas-vindas-box {
+      background-color: #e6f0fa;
+      border: 1px solid #cfe2f3;
+      border-left: 5px solid #003366;
+      border-radius: 6px;
+      padding: 14px;
       margin-bottom: 22px;
-      line-height: 1.4;
+      text-align: center;
+      color: #003366;
+    }
+
+    .boas-vindas-box strong {
+      font-size: 1.05rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .boas-vindas-box span {
+      font-size: 0.9rem;
+      color: #334e68;
     }
 
     label {
@@ -89,7 +104,8 @@
 <div class="container">
   <h2>Diário de Classe</h2>
 
-  <div class="boas-vindas" id="boasVindas"></div>
+  <!-- 🔵 BOAS-VINDAS DESTACADA -->
+  <div class="boas-vindas-box" id="boasVindas"></div>
 
   <form id="formFiltroTurma">
     <label for="semestre">Semestre</label>
@@ -120,8 +136,8 @@
   }
 
   document.getElementById("boasVindas").innerHTML = `
-    <strong>Professor(a) ${professor.nome}</strong><br>
-    Matrícula: ${professor.matricula}
+    <strong>Professor(a) ${professor.nome}</strong>
+    <span>Matrícula: ${professor.matricula}</span>
   `;
 
   const selSemestre   = document.getElementById("semestre");
