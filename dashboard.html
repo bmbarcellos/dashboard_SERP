@@ -1,213 +1,254 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Diário de Classe – Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Diário de Classe – SERP UFF</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    :root {
-      --uff-azul: #003366;
-      --uff-azul-claro: #e6eef6;
-      --uff-verde: #1b8f3c;
-      --uff-vermelho: #c0392b;
-      --cinza: #f4f6f8;
-    }
+<style>
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f2f4f7;
+  margin: 0;
+  padding: 24px;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background-color: var(--cinza);
-    }
+.container {
+  max-width: 1200px;
+  margin: auto;
+}
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-    }
+h2 {
+  color: #003366;
+  margin-bottom: 10px;
+}
 
-    h1 {
-      color: var(--uff-azul);
-      margin-bottom: 16px;
-    }
+.info-box {
+  background: #e6f0fa;
+  border-left: 6px solid #00509e;
+  padding: 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
 
-    /* =============================
-       Cards de resumo
-       ============================= */
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
 
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 28px;
-    }
+select {
+  padding: 8px;
+  font-size: 0.95rem;
+}
 
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 18px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+.table-wrapper {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
 
-    .card h3 {
-      margin: 0 0 8px 0;
-      font-size: 0.95rem;
-      color: #666;
-    }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 900px;
+}
 
-    .card .valor {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: var(--uff-azul);
-    }
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
 
-    /* =============================
-       Tabela do diário
-       ============================= */
+th {
+  background: #003366;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+td.nome {
+  text-align: left;
+  font-weight: bold;
+  background: #f7f9fc;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
 
-    thead {
-      background-color: var(--uff-azul);
-      color: white;
-    }
+/* Status visual */
+.confirmada {
+  background: #d4edda;
+}
 
-    th, td {
-      padding: 10px 12px;
-      text-align: left;
-      font-size: 0.9rem;
-    }
+.Fora\ do\ raio {
+  background: #f8d7da;
+}
 
-    tbody tr:nth-child(even) {
-      background-color: #f8f9fb;
-    }
+.Email\ invalido {
+  background: #fff3cd;
+}
 
-    .status-ok {
-      color: var(--uff-verde);
-      font-weight: bold;
-    }
+.Duplicada {
+  background: #e2e3e5;
+}
 
-    .status-erro {
-      color: var(--uff-vermelho);
-      font-weight: bold;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      background-color: var(--uff-azul-claro);
-      color: var(--uff-azul);
-    }
-  </style>
+.legenda {
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
-  <h1>📘 Diário de Classe</h1>
 
-  <!-- RESUMO -->
-  <div class="cards">
-    <div class="card">
-      <h3>Total de aulas</h3>
-      <div class="valor" id="totalAulas">0</div>
-    </div>
+  <h2>Diário de Classe</h2>
 
-    <div class="card">
-      <h3>Registros processados</h3>
-      <div class="valor" id="totalRegistros">0</div>
-    </div>
+  <div class="info-box" id="infoTurma"></div>
 
-    <div class="card">
-      <h3>Presenças confirmadas</h3>
-      <div class="valor" id="presencasOk">0</div>
-    </div>
-
-    <div class="card">
-      <h3>Presenças invalidadas</h3>
-      <div class="valor" id="presencasErro">0</div>
-    </div>
+  <div class="filters">
+    <select id="filtroMes"></select>
+    <select id="filtroModulo"></select>
   </div>
 
-  <!-- TABELA -->
-  <table>
-    <thead>
-      <tr>
-        <th>Aluno</th>
-        <th>Matrícula</th>
-        <th>Data</th>
-        <th>Horário</th>
-        <th>Disciplina</th>
-        <th>Módulo</th>
-        <th>Status</th>
-        <th>Motivo</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaDiario"></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table id="tabelaDiario"></table>
+  </div>
+
+  <div class="legenda">
+    <strong>Legenda:</strong>
+    ✅ Confirmada &nbsp;&nbsp;
+    ❌ Fora do raio &nbsp;&nbsp;
+    ⚠️ Email inválido &nbsp;&nbsp;
+    🔁 Duplicada
+  </div>
+
 </div>
 
 <script>
-  const dados = JSON.parse(sessionStorage.getItem("dashboard"));
+// ==============================
+// 1. Dados vindos do workflow 3
+// ==============================
 
-  if (!dados) {
-    alert("Sessão expirada. Retorne ao início.");
-    window.location.href = "index.html";
-  }
+const dashboard = JSON.parse(sessionStorage.getItem("dashboard"));
 
-  const { resumo, diario_classe } = dados;
+if (!dashboard || !dashboard.diario_classe) {
+  alert("Sessão expirada ou dados indisponíveis.");
+  window.location.href = "index.html";
+}
 
-  // ============================
-  // Preencher cards
-  // ============================
+const diario = dashboard.diario_classe;
 
-  document.getElementById("totalAulas").textContent =
-    resumo.total_aulas || diario_classe.length;
+// ==============================
+// 2. Helpers
+// ==============================
 
-  document.getElementById("totalRegistros").textContent =
-    resumo.total_registros || 0;
+const unico = arr => [...new Set(arr)];
+const ordenarTexto = arr => arr.sort((a,b) => a.localeCompare(b));
 
-  document.getElementById("presencasOk").textContent =
-    resumo.por_status["Presença confirmada"] || 0;
+// ==============================
+// 3. Informações da turma
+// ==============================
 
-  document.getElementById("presencasErro").textContent =
-    diario_classe.filter(d => !d.presenca).length;
+document.getElementById("infoTurma").innerHTML = `
+  <strong>Disciplina:</strong> ${diario[0].disciplina}<br>
+  <strong>Módulo:</strong> ${diario[0].modulo}
+`;
 
-  // ============================
-  // Tabela do diário
-  // ============================
+// ==============================
+// 4. Preparação de filtros
+// ==============================
 
-  const tbody = document.getElementById("tabelaDiario");
+const selMes = document.getElementById("filtroMes");
+const selModulo = document.getElementById("filtroModulo");
 
-  diario_classe.forEach(aula => {
-    const tr = document.createElement("tr");
+// Extrai mês/ano da data (dd/mm/yyyy)
+const meses = unico(diario.map(d => d.data.slice(3,10)));
+const modulos = unico(diario.map(d => d.modulo));
 
-    tr.innerHTML = `
-      <td>${aula.aluno}</td>
-      <td>${aula.matricula}</td>
-      <td>${aula.data}</td>
-      <td>${aula.horario_aula}</td>
-      <td>${aula.disciplina}</td>
-      <td><span class="badge">${aula.modulo}</span></td>
-      <td class="${aula.presenca ? "status-ok" : "status-erro"}">
-        ${aula.presenca ? "Presente" : "Ausente"}
-      </td>
-      <td>${aula.motivo || "-"}</td>
-    `;
+selMes.innerHTML =
+  `<option value="">Todos os meses</option>` +
+  meses.map(m => `<option value="${m}">${m}</option>`).join("");
 
-    tbody.appendChild(tr);
+selModulo.innerHTML =
+  `<option value="">Todos os módulos</option>` +
+  modulos.map(m => `<option value="${m}">${m}</option>`).join("");
+
+selMes.addEventListener("change", renderizar);
+selModulo.addEventListener("change", renderizar);
+
+// ==============================
+// 5. Renderização do Diário
+// ==============================
+
+function renderizar() {
+
+  const mesSelecionado = selMes.value;
+  const moduloSelecionado = selModulo.value;
+
+  const filtrado = diario.filter(d =>
+    (!mesSelecionado || d.data.includes(mesSelecionado)) &&
+    (!moduloSelecionado || d.modulo === moduloSelecionado)
+  );
+
+  const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
+
+  const dias = unico(
+    filtrado.map(d => d.data.split("/")[0])
+  ).sort((a,b) => Number(a) - Number(b));
+
+  const tabela = document.getElementById("tabelaDiario");
+
+  // Cabeçalho
+  let html = `
+    <tr>
+      <th>Aluno</th>
+      ${dias.map(d => `<th>${d}</th>`).join("")}
+    </tr>
+  `;
+
+  // Linhas por aluno
+  alunos.forEach(aluno => {
+    html += `<tr><td class="nome">${aluno}</td>`;
+
+    dias.forEach(dia => {
+      const registro = filtrado.find(r =>
+        r.aluno === aluno &&
+        r.data.split("/")[0] === dia
+      );
+
+      if (!registro) {
+        html += `<td>-</td>`;
+      } else {
+        html += `
+          <td class="${registro.motivo || 'confirmada'}">
+            ${registro.presenca ? "✅" :
+              registro.motivo === "Fora do raio" ? "❌" :
+              registro.motivo === "Email invalido" ? "⚠️" :
+              "🔁"}
+          </td>
+        `;
+      }
+    });
+
+    html += `</tr>`;
   });
+
+  tabela.innerHTML = html;
+}
+
+// ==============================
+// 6. Primeira renderização
+// ==============================
+
+renderizar();
 </script>
 
 </body>
 </html>
-
