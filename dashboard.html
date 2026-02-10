@@ -73,6 +73,7 @@ select {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
 }
 
 table {
@@ -158,6 +159,23 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   height: auto;
   max-height: 250px;
 }
+
+/* Conferência detalhada */
+#conferencia-filtro {
+  margin-bottom: 10px;
+  padding: 6px;
+  width: 100%;
+  max-width: 300px;
+  font-size: 0.9rem;
+}
+
+#tabelaConferencia {
+  margin-top: 10px;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
 </style>
 </head>
 
@@ -198,6 +216,31 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
       <canvas id="graficoPizza"></canvas>
       <canvas id="graficoBarra"></canvas>
     </div>
+  </div>
+
+  <!-- Conferência detalhada -->
+  <input type="text" id="conferencia-filtro" placeholder="Filtrar registros..." />
+
+  <div class="table-wrapper" id="tabelaConferenciaWrapper">
+    <table id="tabelaConferencia">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Aluno</th>
+          <th>Matrícula</th>
+          <th>Disciplina</th>
+          <th>Módulo</th>
+          <th>Status</th>
+          <th>Palavra-chave</th>
+          <th>IP Origem</th>
+          <th>Email inválido</th>
+          <th>Distância (m)</th>
+          <th>Horário errado</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
 </div>
@@ -275,7 +318,7 @@ selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
 // ==============================
-// 5. Renderização do Diário
+// 5. Renderização do Diário + Gráficos + Conferência
 // ==============================
 
 function renderizar() {
@@ -298,6 +341,7 @@ function renderizar() {
 
   const totalDias = Math.max(...alunos.map(aluno => filtrado.filter(r => r.aluno === aluno).length));
 
+  // === Tabela Diário ===
   const tabela = document.getElementById("tabelaDiario");
 
   let html = `
@@ -349,13 +393,9 @@ function renderizar() {
 
   tabela.innerHTML = html;
 
-  // ==============================
-  // Gráficos
-  // ==============================
-
+  // === Gráficos ===
   const statusMap = { confirmada: "Presença", "Fora do raio": "Fora do raio", "Email invalido": "Email inválido", Duplicada: "Duplicada" };
 
-  // Linha: evolução de presenças
   const diasOrdenados = dias;
   const presencaPorDia = diasOrdenados.map(d => filtrado.filter(r => r.data.split("/")[0]===d && r.presenca).length);
 
@@ -374,14 +414,9 @@ function renderizar() {
         fill: true
       }]
     },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      scales: { y: { beginAtZero:true } }
-    }
+    options: { responsive:false, maintainAspectRatio:false, scales:{ y:{beginAtZero:true} } }
   });
 
-  // Pizza: proporção de status
   const statusCounts = { "Presença":0, "Fora do raio":0, "Email inválido":0, "Duplicada":0 };
   filtrado.forEach(r => {
     if (r.presenca) statusCounts["Presença"]++;
@@ -392,34 +427,54 @@ function renderizar() {
   if (window.chartPizza) window.chartPizza.destroy();
   window.chartPizza = new Chart(ctxPizza, {
     type: "pie",
-    data: {
-      labels: Object.keys(statusCounts),
-      datasets: [{
-        data: Object.values(statusCounts),
-        backgroundColor: ["#00509e","#f03e3e","#f5c242","#6c757d"]
-      }]
-    },
+    data: { labels: Object.keys(statusCounts), datasets:[{ data:Object.values(statusCounts), backgroundColor:["#00509e","#f03e3e","#f5c242","#6c757d"] }] },
     options: { responsive:false, maintainAspectRatio:true }
   });
 
-  // Barra: estatísticas básicas
   const totalAlunos = alunos.length;
   const totalConfirmadas = filtrado.filter(r => r.presenca).length;
   const ctxBarra = document.getElementById("graficoBarra").getContext("2d");
   if (window.chartBarra) window.chartBarra.destroy();
   window.chartBarra = new Chart(ctxBarra, {
     type: "bar",
-    data: {
-      labels: ["Total de Alunos","Total Presenças"],
-      datasets: [{
-        label: "Quantidade",
-        data: [totalAlunos,totalConfirmadas],
-        backgroundColor: ["#00509e","#28a745"]
-      }]
-    },
-    options: { responsive:false, maintainAspectRatio:true, scales:{y:{beginAtZero:true}} }
+    data: { labels:["Total de Alunos","Total Presenças"], datasets:[{ label:"Quantidade", data:[totalAlunos,totalConfirmadas], backgroundColor:["#00509e","#28a745"] }] },
+    options:{ responsive:false, maintainAspectRatio:true, scales:{y:{beginAtZero:true}} }
+  });
+
+  // === Tabela de Conferência Detalhada ===
+  const tabelaConfBody = document.querySelector("#tabelaConferencia tbody");
+  tabelaConfBody.innerHTML = "";
+
+  filtrado.forEach(r => {
+    tabelaConfBody.innerHTML += `
+      <tr>
+        <td>${r.data}</td>
+        <td>${r.horario || "-"}</td>
+        <td>${r.aluno}</td>
+        <td>${r.matricula}</td>
+        <td>${r.disciplina}</td>
+        <td>${r.modulo}</td>
+        <td>${r.presenca ? "✅" : (r.motivo === "Fora do raio" ? "❌" : r.motivo === "Email invalido" ? "⚠️" : "🔁")}</td>
+        <td>${r.palavra_chave || ""}</td>
+        <td>${r.ip || ""}</td>
+        <td>${r.email_invalido ? "⚠️" : ""}</td>
+        <td>${r.distancia || ""}</td>
+        <td>${r.horario_errado ? "⚠️" : ""}</td>
+      </tr>
+    `;
   });
 }
+
+// ==============================
+// Filtro tabela conferência
+// ==============================
+document.getElementById("conferencia-filtro").addEventListener("input", e => {
+  const filtro = e.target.value.toLowerCase();
+  const linhas = document.querySelectorAll("#tabelaConferencia tbody tr");
+  linhas.forEach(linha => {
+    linha.style.display = [...linha.cells].some(td => td.textContent.toLowerCase().includes(filtro)) ? "" : "none";
+  });
+});
 
 // ==============================
 // Primeira renderização
