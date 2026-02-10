@@ -26,10 +26,18 @@ h2 {
 .info-box {
   background: #e6f0fa;
   border-left: 6px solid #00509e;
-  padding: 14px;
+  padding: 14px 14px 14px 20px;
   border-radius: 6px;
   margin-bottom: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .filters {
@@ -119,6 +127,11 @@ tr.total-linha {
   margin-top: 14px;
   font-size: 0.85rem;
 }
+
+.info-box img {
+  height: 60px;
+  object-fit: contain;
+}
 </style>
 </head>
 
@@ -126,9 +139,12 @@ tr.total-linha {
 
 <div class="container">
 
-  <h2>SERP - Diário de Classe</h2>
+  <h2>Diário de Classe</h2>
 
-  <div class="info-box" id="infoTurma"></div>
+  <div class="info-box">
+    <div class="info-text" id="infoTurma"></div>
+    <img src="logo-uff.png" alt="Logo UFF">
+  </div>
 
   <div class="filters">
     <select id="filtroMes"></select>
@@ -178,9 +194,9 @@ const extrairMes = data => data.split("/")[1];
 // ==============================
 
 document.getElementById("infoTurma").innerHTML = `
-  <strong>Professor(a):</strong> ${professor.nome} (Matrícula: ${professor.matricula})<br>
-  <strong>Disciplina:</strong> ${diario[0].disciplina}<br>
-  <strong>Módulo:</strong> ${diario[0].modulo}
+  <strong>Professor(a):</strong> ${professor.nome}<br>
+  <strong>Matrícula:</strong> ${professor.matricula}<br>
+  <strong>Disciplina:</strong> ${diario[0].disciplina}
 `;
 
 // ==============================
