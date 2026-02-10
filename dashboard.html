@@ -40,11 +40,19 @@ h2 {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.95rem;
 }
 
-.info-text strong {
+.info-line {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.info-line strong {
+  min-width: 90px;
+  text-align: left;
   font-weight: bold;
 }
 
@@ -122,7 +130,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 /* Logo proporcional ao texto */
 .info-box img {
   height: auto;
-  max-height: 70px; /* ajusta conforme altura do texto */
+  max-height: 100px; /* aumento conforme solicitado */
   object-fit: contain;
 }
 </style>
@@ -132,10 +140,12 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
 <div class="container">
 
-  <h2>Diário de Classe</h2>
+  <h2>SERP - Diário de Classe</h2>
 
   <div class="info-box">
-    <div class="info-text" id="infoTurma"></div>
+    <div class="info-text" id="infoTurma">
+      <!-- Conteúdo preenchido pelo JS -->
+    </div>
     <img src="logo-uff.png" alt="Logo UFF">
   </div>
 
@@ -186,10 +196,11 @@ const extrairMes = data => data.split("/")[1];
 // 3. Informações da turma + professor
 // ==============================
 
-document.getElementById("infoTurma").innerHTML = `
-  <strong>Professor(a):</strong> ${professor.nome}<br>
-  <strong>Matrícula:</strong> ${professor.matricula}<br>
-  <strong>Disciplina:</strong> ${diario[0].disciplina}
+const infoTurma = document.getElementById("infoTurma");
+infoTurma.innerHTML = `
+  <div class="info-line"><strong>Professor(a):</strong> <span>${professor.nome}</span></div>
+  <div class="info-line"><strong>Matrícula:</strong> <span>${professor.matricula}</span></div>
+  <div class="info-line"><strong>Disciplina:</strong> <span>${diario[0].disciplina}</span></div>
 `;
 
 // ==============================
@@ -204,26 +215,22 @@ const mesesNome = [
   "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-// Limites do semestre
 let inicioMes = 1, fimMes = 7;
 if (semestreAtual && semestreAtual.endsWith("_2")) {
   inicioMes = 7;
   fimMes = 12;
 }
 
-// Meses disponíveis
 const mesesDisponiveis = ordenarTexto(
   unico(diario.map(d => extrairMes(d.data))).filter(m => Number(m) >= inicioMes && Number(m) <= fimMes)
 );
 
-// Preenche select de meses
 selMes.innerHTML =
   `<option value="">Todos os meses</option>` +
   mesesDisponiveis
     .map(m => `<option value="${m}">${mesesNome[Number(m) - 1]}</option>`)
     .join("");
 
-// Módulos existentes
 const modulos = unico(diario.map(d => d.modulo));
 selModulo.innerHTML =
   `<option value="">Todos os módulos</option>` +
@@ -258,7 +265,6 @@ function renderizar() {
 
   const tabela = document.getElementById("tabelaDiario");
 
-  // Cabeçalho
   let html = `
     <tr>
       <th>Aluno</th>
@@ -268,10 +274,8 @@ function renderizar() {
     </tr>
   `;
 
-  // Linhas por aluno
   alunos.forEach(aluno => {
     html += `<tr><td class="nome">${aluno}</td>`;
-
     const matricula = filtrado.find(r => r.aluno === aluno)?.matricula || "-";
     html += `<td class="matricula">${matricula}</td>`;
 
@@ -282,10 +286,8 @@ function renderizar() {
         r.aluno === aluno &&
         r.data.split("/")[0] === dia
       );
-
-      if (!registro) {
-        html += `<td>-</td>`;
-      } else {
+      if (!registro) html += `<td>-</td>`;
+      else {
         if (registro.presenca) totalConfirmadas++;
         html += `
           <td class="${registro.motivo || 'confirmada'}">
@@ -300,18 +302,15 @@ function renderizar() {
 
     const percentual = ((totalConfirmadas / totalDias) * 100).toFixed(1);
     html += `<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td>`;
-
     html += `</tr>`;
   });
 
-  // Linha final: total de presenças por dia
   html += `<tr class="total-linha"><td class="nome">Total ✅</td><td></td>`;
   dias.forEach(dia => {
     const totalDia = filtrado.filter(r => r.data.split("/")[0] === dia && r.presenca).length;
     html += `<td class="total">${totalDia}</td>`;
   });
-  html += `<td class="total"></td>`; // coluna total
-  html += `</tr>`;
+  html += `<td class="total"></td></tr>`;
 
   tabela.innerHTML = html;
 }
