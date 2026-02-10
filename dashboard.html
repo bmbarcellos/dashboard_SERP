@@ -139,18 +139,23 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   margin-top: 24px;
 }
 
+#graficoEvolucao {
+  width: 1000px; /* igual largura da tabela de presença */
+  max-width: 100%;
+  height: 300px;
+}
+
 .flex-charts {
   display: flex;
   gap: 20px;
-  flex-wrap: wrap;
   justify-content: flex-start;
   margin-top: 20px;
 }
 
 .flex-charts canvas {
-  flex: 0 0 48%;
-  width: 100% !important;
-  height: auto !important;
+  width: 40%;
+  height: auto;
+  max-height: 250px;
 }
 </style>
 </head>
@@ -355,12 +360,11 @@ function renderizarGraficos(filtrado, dias, alunos) {
   const ctxProporcao = document.getElementById("graficoProporcao").getContext("2d");
   const ctxResumo = document.getElementById("graficoResumo").getContext("2d");
 
-  // Limpa gráficos antigos
   if (window.graficoEvo) window.graficoEvo.destroy();
   if (window.graficoProp) window.graficoProp.destroy();
   if (window.graficoRes) window.graficoRes.destroy();
 
-  // Evolução do status ao longo do tempo (linha)
+  // Evolução do status (linha)
   const statusPorDia = dias.map(dia => {
     const registros = filtrado.filter(r => r.data.split("/")[0] === dia);
     return {
@@ -382,10 +386,9 @@ function renderizarGraficos(filtrado, dias, alunos) {
         { label: '🔁 Duplicada', data: statusPorDia.map(s => s.duplicada), borderColor: '#6c757d', backgroundColor:'#6c757d33', fill:true }
       ]
     },
-    options: { responsive:true, maintainAspectRatio:true, aspectRatio:2, plugins:{legend:{position:'top'}} }
+    options: { responsive:true, maintainAspectRatio:false, aspectRatio:3, plugins:{legend:{position:'top'}} }
   });
 
-  // Proporção de presenças confirmadas (pizza)
   const totalConfirmadas = filtrado.filter(r => r.presenca).length;
   const totalRegistros = filtrado.length;
 
@@ -401,7 +404,6 @@ function renderizarGraficos(filtrado, dias, alunos) {
     options:{ responsive:true, maintainAspectRatio:true, aspectRatio:1.2 }
   });
 
-  // Resumo de status gerais (barra)
   const contConfirmada = totalConfirmadas;
   const contFora = filtrado.filter(r => r.motivo === "Fora do raio").length;
   const contEmail = filtrado.filter(r => r.motivo === "Email invalido").length;
