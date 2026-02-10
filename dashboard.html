@@ -150,7 +150,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
 #grafico-secundario-wrapper {
   display: flex;
-  gap: 20px; /* espaçamento horizontal ajustado */
+  gap: 20px;
   justify-content: flex-start;
 }
 
@@ -169,12 +169,32 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   font-size: 0.9rem;
 }
 
-#tabelaConferencia {
-  margin-top: 10px;
+#tabelaConferenciaWrapper {
   overflow-x: auto;
+  margin-top: 10px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+
+#tabelaConferencia {
+  border-collapse: collapse;
+  width: 1200px;
+}
+
+#tabelaConferencia th, #tabelaConferencia td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+#tabelaConferencia th {
+  background: #003366;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 </style>
 </head>
@@ -220,8 +240,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
   <!-- Conferência detalhada -->
   <input type="text" id="conferencia-filtro" placeholder="Filtrar registros..." />
-
-  <div class="table-wrapper" id="tabelaConferenciaWrapper">
+  <div id="tabelaConferenciaWrapper">
     <table id="tabelaConferencia">
       <thead>
         <tr>
@@ -233,10 +252,7 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
           <th>Módulo</th>
           <th>Status</th>
           <th>Palavra-chave</th>
-          <th>IP Origem</th>
-          <th>Email inválido</th>
-          <th>Distância (m)</th>
-          <th>Horário errado</th>
+          <th>Ocorrências</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -250,7 +266,6 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 // ==============================
 // 1. Dados e semestre
 // ==============================
-
 const dashboard = JSON.parse(sessionStorage.getItem("dashboard"));
 const semestreAtual = sessionStorage.getItem("semestre");
 const professor = JSON.parse(sessionStorage.getItem("professor"));
@@ -265,7 +280,6 @@ const diario = dashboard.diario_classe;
 // ==============================
 // 2. Helpers
 // ==============================
-
 const unico = arr => [...new Set(arr)];
 const ordenarTexto = arr => arr.sort((a,b) => a.localeCompare(b));
 const extrairMes = data => data.split("/")[1];
@@ -273,7 +287,6 @@ const extrairMes = data => data.split("/")[1];
 // ==============================
 // 3. Informações da turma + professor
 // ==============================
-
 const infoTurma = document.getElementById("infoTurma");
 infoTurma.innerHTML = `
   <div class="info-line"><strong>Professor(a):</strong> <span>${professor.nome}</span></div>
@@ -284,7 +297,6 @@ infoTurma.innerHTML = `
 // ==============================
 // 4. Preparação de filtros
 // ==============================
-
 const selMes = document.getElementById("filtroMes");
 const selModulo = document.getElementById("filtroModulo");
 
@@ -320,7 +332,6 @@ selModulo.addEventListener("change", renderizar);
 // ==============================
 // 5. Renderização do Diário + Gráficos + Conferência
 // ==============================
-
 function renderizar() {
   const mesSelecionado = selMes.value;
   const moduloSelecionado = selModulo.value;
@@ -344,44 +355,23 @@ function renderizar() {
   // === Tabela Diário ===
   const tabela = document.getElementById("tabelaDiario");
 
-  let html = `
-    <tr>
-      <th>Aluno</th>
-      <th>Matrícula</th>
-      ${dias.map(d => `<th>${d}</th>`).join("")}
-      <th class="total">Total</th>
-    </tr>
-  `;
+  let html = `<tr><th>Aluno</th><th>Matrícula</th>${dias.map(d => `<th>${d}</th>`).join("")}<th class="total">Total</th></tr>`;
 
   alunos.forEach(aluno => {
     html += `<tr><td class="nome">${aluno}</td>`;
     const matricula = filtrado.find(r => r.aluno === aluno)?.matricula || "-";
     html += `<td class="matricula">${matricula}</td>`;
-
     let totalConfirmadas = 0;
-
     dias.forEach(dia => {
-      const registro = filtrado.find(r =>
-        r.aluno === aluno &&
-        r.data.split("/")[0] === dia
-      );
+      const registro = filtrado.find(r => r.aluno === aluno && r.data.split("/")[0] === dia);
       if (!registro) html += `<td>-</td>`;
       else {
         if (registro.presenca) totalConfirmadas++;
-        html += `
-          <td class="${registro.motivo || 'confirmada'}">
-            ${registro.presenca ? "✅" :
-              registro.motivo === "Fora do raio" ? "❌" :
-              registro.motivo === "Email invalido" ? "⚠️" :
-              "🔁"}
-          </td>
-        `;
+        html += `<td class="${registro.motivo || 'confirmada'}">${registro.presenca ? "✅" : registro.motivo==="Fora do raio"?"❌":registro.motivo==="Email invalido"?"⚠️":"🔁"}</td>`;
       }
     });
-
     const percentual = ((totalConfirmadas / totalDias) * 100).toFixed(1);
-    html += `<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td>`;
-    html += `</tr>`;
+    html += `<td class="total">${totalConfirmadas} ✅ (${percentual}%)</td></tr>`;
   });
 
   html += `<tr class="total-linha"><td class="nome">Total ✅</td><td></td>`;
@@ -390,12 +380,10 @@ function renderizar() {
     html += `<td class="total">${totalDia}</td>`;
   });
   html += `<td class="total"></td></tr>`;
-
   tabela.innerHTML = html;
 
   // === Gráficos ===
   const statusMap = { confirmada: "Presença", "Fora do raio": "Fora do raio", "Email invalido": "Email inválido", Duplicada: "Duplicada" };
-
   const diasOrdenados = dias;
   const presencaPorDia = diasOrdenados.map(d => filtrado.filter(r => r.data.split("/")[0]===d && r.presenca).length);
 
@@ -403,83 +391,68 @@ function renderizar() {
   if (window.chartLinha) window.chartLinha.destroy();
   window.chartLinha = new Chart(ctxLinha, {
     type: "line",
-    data: {
-      labels: diasOrdenados,
-      datasets: [{
-        label: "Presenças Confirmadas",
-        data: presencaPorDia,
-        backgroundColor: "#00509e33",
-        borderColor: "#00509e",
-        borderWidth: 2,
-        fill: true
-      }]
-    },
-    options: { responsive:false, maintainAspectRatio:false, scales:{ y:{beginAtZero:true} } }
+    data: { labels:diasOrdenados, datasets:[{ label:"Presenças Confirmadas", data:presencaPorDia, backgroundColor:"#00509e33", borderColor:"#00509e", borderWidth:2, fill:true }]},
+    options:{ responsive:false, maintainAspectRatio:false, scales:{y:{beginAtZero:true}} }
   });
 
   const statusCounts = { "Presença":0, "Fora do raio":0, "Email inválido":0, "Duplicada":0 };
-  filtrado.forEach(r => {
-    if (r.presenca) statusCounts["Presença"]++;
-    else statusCounts[statusMap[r.motivo] || "Duplicada"]++;
-  });
+  filtrado.forEach(r => { if (r.presenca) statusCounts["Presença"]++; else statusCounts[statusMap[r.motivo]||"Duplicada"]++; });
 
   const ctxPizza = document.getElementById("graficoPizza").getContext("2d");
   if (window.chartPizza) window.chartPizza.destroy();
   window.chartPizza = new Chart(ctxPizza, {
-    type: "pie",
-    data: { labels: Object.keys(statusCounts), datasets:[{ data:Object.values(statusCounts), backgroundColor:["#00509e","#f03e3e","#f5c242","#6c757d"] }] },
-    options: { responsive:false, maintainAspectRatio:true }
+    type:"pie",
+    data:{ labels:Object.keys(statusCounts), datasets:[{data:Object.values(statusCounts), backgroundColor:["#00509e","#f03e3e","#f5c242","#6c757d"]}] },
+    options:{ responsive:false, maintainAspectRatio:true }
   });
 
   const totalAlunos = alunos.length;
-  const totalConfirmadas = filtrado.filter(r => r.presenca).length;
+  const totalConfirmadas = filtrado.filter(r=>r.presenca).length;
   const ctxBarra = document.getElementById("graficoBarra").getContext("2d");
   if (window.chartBarra) window.chartBarra.destroy();
   window.chartBarra = new Chart(ctxBarra, {
-    type: "bar",
-    data: { labels:["Total de Alunos","Total Presenças"], datasets:[{ label:"Quantidade", data:[totalAlunos,totalConfirmadas], backgroundColor:["#00509e","#28a745"] }] },
+    type:"bar",
+    data:{ labels:["Total de Alunos","Total Presenças"], datasets:[{ label:"Quantidade", data:[totalAlunos,totalConfirmadas], backgroundColor:["#00509e","#28a745"] }] },
     options:{ responsive:false, maintainAspectRatio:true, scales:{y:{beginAtZero:true}} }
   });
 
-  // === Tabela de Conferência Detalhada ===
+  // === Tabela Conferência Detalhada com Ocorrências ===
   const tabelaConfBody = document.querySelector("#tabelaConferencia tbody");
   tabelaConfBody.innerHTML = "";
-
-  filtrado.forEach(r => {
+  filtrado.forEach(r=>{
+    let ocorrencias = [];
+    if(r.email_invalido) ocorrencias.push("Email inválido");
+    if(r.distancia) ocorrencias.push(`Distância: ${r.distancia}m`);
+    if(r.horario_errado) ocorrencias.push("Horário errado");
     tabelaConfBody.innerHTML += `
       <tr>
         <td>${r.data}</td>
-        <td>${r.horario || "-"}</td>
+        <td>${r.horario||""}</td>
         <td>${r.aluno}</td>
         <td>${r.matricula}</td>
         <td>${r.disciplina}</td>
         <td>${r.modulo}</td>
-        <td>${r.presenca ? "✅" : (r.motivo === "Fora do raio" ? "❌" : r.motivo === "Email invalido" ? "⚠️" : "🔁")}</td>
-        <td>${r.palavra_chave || ""}</td>
-        <td>${r.ip || ""}</td>
-        <td>${r.email_invalido ? "⚠️" : ""}</td>
-        <td>${r.distancia || ""}</td>
-        <td>${r.horario_errado ? "⚠️" : ""}</td>
-      </tr>
-    `;
+        <td>${r.presenca ? "✅" : r.motivo==="Fora do raio"?"❌":r.motivo==="Email invalido"?"⚠️":"🔁"}</td>
+        <td>${r.palavra_chave||""}</td>
+        <td>${ocorrencias.join(", ")}</td>
+      </tr>`;
   });
 }
 
 // ==============================
 // Filtro tabela conferência
 // ==============================
-document.getElementById("conferencia-filtro").addEventListener("input", e => {
+document.getElementById("conferencia-filtro").addEventListener("input", e=>{
   const filtro = e.target.value.toLowerCase();
   const linhas = document.querySelectorAll("#tabelaConferencia tbody tr");
-  linhas.forEach(linha => {
-    linha.style.display = [...linha.cells].some(td => td.textContent.toLowerCase().includes(filtro)) ? "" : "none";
+  linhas.forEach(linha=>{
+    linha.style.display=[...linha.cells].some(td=>td.textContent.toLowerCase().includes(filtro))?"":"none";
   });
 });
 
 // ==============================
 // Primeira renderização
 // ==============================
-
 renderizar();
 </script>
 
