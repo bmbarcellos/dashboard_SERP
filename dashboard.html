@@ -143,7 +143,7 @@ if (!dashboard || !dashboard.diario_classe) {
 }
 
 const diario = dashboard.diario_classe;
-const semestre = dashboard.semestre || "2026_1"; // fallback se não existir
+const semestre = dashboard.semestre; // pega o semestre enviado da página 2
 
 // ==============================
 // 2. Helpers
@@ -169,7 +169,7 @@ const selMes = document.getElementById("filtroMes");
 
 function extrairMes(data) {
   const [, mm] = data.split("/");
-  return mm;
+  return String(Number(mm)); // garante string sem zero à esquerda
 }
 
 const mesesNome = [
@@ -177,19 +177,19 @@ const mesesNome = [
   "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-// Define faixa de meses com base no semestre
+// Define faixa de meses de acordo com o semestre
 let faixaMeses;
-if (semestre.endsWith("_1")) {
-  faixaMeses = [1,2,3,4,5,6,7];   // 1º semestre
-} else if (semestre.endsWith("_2")) {
-  faixaMeses = [7,8,9,10,11,12]; // 2º semestre
+if (semestre && semestre.endsWith("_1")) {
+  faixaMeses = ["1","2","3","4","5","6","7"];
+} else if (semestre && semestre.endsWith("_2")) {
+  faixaMeses = ["7","8","9","10","11","12"];
 } else {
-  faixaMeses = [1,2,3,4,5,6,7,8,9,10,11,12]; // fallback: todos
+  faixaMeses = ["1","2","3","4","5","6","7","8","9","10","11","12"];
 }
 
 // Pega apenas meses presentes no diário e dentro da faixa do semestre
 const mesesDisponiveis = ordenarTexto(
-  unico(diario.map(d => Number(extrairMes(d.data))))
+  unico(diario.map(d => extrairMes(d.data)))
     .filter(m => faixaMeses.includes(m))
 );
 
@@ -197,9 +197,10 @@ const mesesDisponiveis = ordenarTexto(
 selMes.innerHTML =
   `<option value="">Todos os meses</option>` +
   mesesDisponiveis
-    .map(m => `<option value="${m}">${mesesNome[m - 1]}</option>`)
+    .map(m => `<option value="${m}">${mesesNome[Number(m) - 1]}</option>`)
     .join("");
 
+// Adiciona listener
 selMes.addEventListener("change", renderizar);
 
 // ==============================
@@ -212,7 +213,7 @@ function renderizar() {
 
   const filtrado = diario.filter(d => {
     const mes = extrairMes(d.data);
-    return (!selMes.value || mes === selMes.value);
+    return (!mesSelecionado || mes === mesSelecionado);
   });
 
   const alunos = ordenarTexto(unico(filtrado.map(d => d.aluno)));
