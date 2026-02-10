@@ -168,20 +168,29 @@ document.getElementById("infoTurma").innerHTML = `
 const selMes = document.getElementById("filtroMes");
 const selModulo = document.getElementById("filtroModulo");
 
-// Extrai mês/ano da data (dd/mm/yyyy)
-const meses = unico(diario.map(d => d.data.slice(3,10)));
-const modulos = unico(diario.map(d => d.modulo));
+// Meses existentes nos dados (apenas do semestre já filtrado)
+const mesesDisponiveis = unico(
+  diario.map(d => extrairMes(d.data))
+).sort((a,b) => Number(a) - Number(b));
 
+// Preenche select de meses
 selMes.innerHTML =
   `<option value="">Todos os meses</option>` +
-  meses.map(m => `<option value="${m}">${m}</option>`).join("");
+  mesesDisponiveis
+    .map(m => `<option value="${m}">${mesesNome[Number(m) - 1]}</option>`)
+    .join("");
 
+// Módulos existentes
+const modulos = unico(diario.map(d => d.modulo));
+
+// Preenche select de módulos
 selModulo.innerHTML =
   `<option value="">Todos os módulos</option>` +
   modulos.map(m => `<option value="${m}">${m}</option>`).join("");
 
 selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
+
 
 // ==============================
 // 5. Renderização do Diário
