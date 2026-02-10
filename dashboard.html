@@ -149,13 +149,13 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
-  margin-top: 20px; /* espaço extra entre linha e os gráficos menores */
+  margin-top: 20px;
 }
 
 .flex-charts canvas {
   flex: 0 0 48%; /* metade do container */
-  min-width: 200px;
-  height: 250px;
+  width: 100% !important; /* largura máxima do container */
+  height: auto !important; /* altura proporcional */
 }
 </style>
 
@@ -407,7 +407,7 @@ function renderizarGraficos(filtrado, dias) {
         backgroundColor: coresUFF
       }]
     },
-    options:{responsive:true, plugins:{title:{display:true,text:'Proporção de Status de Presença'}}}
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.2, plugins:{title:{display:true,text:'Proporção de Status de Presença'}}}
   });
 
   // Gráfico barra
@@ -427,7 +427,7 @@ function renderizarGraficos(filtrado, dias) {
         backgroundColor: coresUFF
       }]
     },
-    options:{responsive:true, plugins:{title:{display:true,text:'Resumo Estatístico de Presença'}}}
+    options:{responsive:true, maintainAspectRatio:true, aspectRatio:1.2, plugins:{title:{display:true,text:'Resumo Estatístico de Presença'}}}
   });
 }
 
