@@ -139,9 +139,15 @@
         }
 
         sessionStorage.setItem(
-          "serp_contexto",
-          JSON.stringify(contexto)
+        "professor",
+        JSON.stringify(contexto.professor)
         );
+
+        sessionStorage.setItem(
+        "curriculo",
+        JSON.stringify(contexto.curriculo)
+        );
+
 
         window.location.href = "pagina2.html";
 
