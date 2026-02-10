@@ -130,10 +130,22 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 /* Logo proporcional ao texto */
 .info-box img {
   height: auto;
-  max-height: 100px; /* aumento conforme solicitado */
+  max-height: 100px;
   object-fit: contain;
 }
+
+.charts-container {
+  margin-top: 30px;
+}
+
+.charts-container h3 {
+  color: #003366;
+  margin-bottom: 16px;
+}
 </style>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -156,6 +168,13 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
   <div class="table-wrapper">
     <table id="tabelaDiario"></table>
+  </div>
+
+  <div class="charts-container">
+    <h3>Estatísticas de Presença</h3>
+    <canvas id="graficoEvolucao" style="max-width:100%; height:300px;"></canvas>
+    <canvas id="graficoProporcao" style="max-width:100%; height:300px; margin-top:20px;"></canvas>
+    <canvas id="graficoResumo" style="max-width:100%; height:300px; margin-top:20px;"></canvas>
   </div>
 
   <div class="legenda">
@@ -313,6 +332,95 @@ function renderizar() {
   html += `<td class="total"></td></tr>`;
 
   tabela.innerHTML = html;
+
+  // ==============================
+  // Gráficos
+  // ==============================
+  renderizarGraficos(filtrado, dias);
+}
+
+// ==============================
+// Função de renderização de gráficos
+// ==============================
+
+function renderizarGraficos(filtrado, dias) {
+  // Dados por status e dia
+  const statusPorDia = dias.map(dia => {
+    const registrosDoDia = filtrado.filter(r => r.data.split("/")[0] === dia);
+    const contagem = {confirmada:0, ForaDoRaio:0, EmailInvalido:0, Duplicada:0};
+    registrosDoDia.forEach(r => {
+      if (r.presenca) contagem.confirmada++;
+      else if (r.motivo === "Fora do raio") contagem.ForaDoRaio++;
+      else if (r.motivo === "Email invalido") contagem.EmailInvalido++;
+      else contagem.Duplicada++;
+    });
+    return contagem;
+  });
+
+  // Total status
+  const totalStatus = {confirmada:0, ForaDoRaio:0, EmailInvalido:0, Duplicada:0};
+  filtrado.forEach(r => {
+    if (r.presenca) totalStatus.confirmada++;
+    else if (r.motivo === "Fora do raio") totalStatus.ForaDoRaio++;
+    else if (r.motivo === "Email invalido") totalStatus.EmailInvalido++;
+    else totalStatus.Duplicada++;
+  });
+
+  // -------------------------
+  // Gráfico 1: Evolução
+  // -------------------------
+  const ctxEvolucao = document.getElementById('graficoEvolucao').getContext('2d');
+  new Chart(ctxEvolucao, {
+    type: 'line',
+    data: {
+      labels: dias,
+      datasets: [
+        {label:'Confirmada', data: statusPorDia.map(s=>s.confirmada), borderColor:'#28a745', fill:false},
+        {label:'Fora do Raio', data: statusPorDia.map(s=>s.ForaDoRaio), borderColor:'#dc3545', fill:false},
+        {label:'Email Inválido', data: statusPorDia.map(s=>s.EmailInvalido), borderColor:'#ffc107', fill:false},
+        {label:'Duplicada', data: statusPorDia.map(s=>s.Duplicada), borderColor:'#6c757d', fill:false}
+      ]
+    },
+    options:{responsive:true, plugins:{title:{display:true,text:'Evolução do Status de Presença'}}}
+  });
+
+  // -------------------------
+  // Gráfico 2: Proporção total
+  // -------------------------
+  const ctxProporcao = document.getElementById('graficoProporcao').getContext('2d');
+  new Chart(ctxProporcao, {
+    type: 'pie',
+    data: {
+      labels:['Confirmada','Fora do Raio','Email Inválido','Duplicada'],
+      datasets:[{
+        data:[totalStatus.confirmada,totalStatus.ForaDoRaio,totalStatus.EmailInvalido,totalStatus.Duplicada],
+        backgroundColor:['#28a745','#dc3545','#ffc107','#6c757d']
+      }]
+    },
+    options:{responsive:true, plugins:{title:{display:true,text:'Proporção de Status de Presença'}}}
+  });
+
+  // -------------------------
+  // Gráfico 3: Resumo básico
+  // -------------------------
+  const ctxResumo = document.getElementById('graficoResumo').getContext('2d');
+  new Chart(ctxResumo, {
+    type: 'bar',
+    data: {
+      labels:['Total Alunos','Total Registros','Total Confirmadas','Total Faltas/Erros'],
+      datasets:[{
+        label:'Contagem',
+        data:[
+          unico(filtrado.map(r=>r.aluno)).length,
+          filtrado.length,
+          totalStatus.confirmada,
+          totalStatus.ForaDoRaio + totalStatus.EmailInvalido + totalStatus.Duplicada
+        ],
+        backgroundColor:['#003366','#28a745','#ffc107','#dc3545']
+      }]
+    },
+    options:{responsive:true, plugins:{title:{display:true,text:'Resumo Estatístico de Presença'}}}
+  });
 }
 
 // ==============================
