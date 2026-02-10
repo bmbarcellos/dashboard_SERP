@@ -53,7 +53,7 @@ select {
 table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 900px;
+  min-width: 1000px;
 }
 
 th, td {
@@ -77,6 +77,14 @@ td.nome {
   background: #f7f9fc;
   position: sticky;
   left: 0;
+  z-index: 2;
+}
+
+td.matricula {
+  text-align: left;
+  background: #f7f9fc;
+  position: sticky;
+  left: 200px; /* ajusta conforme largura do nome */
   z-index: 1;
 }
 
@@ -138,6 +146,7 @@ td.nome {
 
 const dashboard = JSON.parse(sessionStorage.getItem("dashboard"));
 const semestreAtual = sessionStorage.getItem("semestre");
+const professor = JSON.parse(sessionStorage.getItem("professor"));
 
 if (!dashboard || !dashboard.diario_classe) {
   alert("Sessão expirada ou dados indisponíveis.");
@@ -155,10 +164,11 @@ const ordenarTexto = arr => arr.sort((a,b) => a.localeCompare(b));
 const extrairMes = data => data.split("/")[1];
 
 // ==============================
-// 3. Informações da turma
+// 3. Informações da turma + professor
 // ==============================
 
 document.getElementById("infoTurma").innerHTML = `
+  <strong>Professor(a):</strong> ${professor.nome} (Matrícula: ${professor.matricula})<br>
   <strong>Disciplina:</strong> ${diario[0].disciplina}<br>
   <strong>Módulo:</strong> ${diario[0].modulo}
 `;
@@ -175,7 +185,7 @@ const mesesNome = [
   "Agosto","Setembro","Outubro","Novembro","Dezembro"
 ];
 
-// Definir limite do semestre
+// Limites do semestre
 let inicioMes = 1, fimMes = 7;
 if (semestreAtual && semestreAtual.endsWith("_2")) {
   inicioMes = 7;
@@ -204,7 +214,7 @@ selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
 
 // ==============================
-// 5. Renderização do Diário com total e linha final
+// 5. Renderização do Diário com matrícula, total por aluno e linha final
 // ==============================
 
 function renderizar() {
@@ -233,6 +243,7 @@ function renderizar() {
   let html = `
     <tr>
       <th>Aluno</th>
+      <th>Matrícula</th>
       ${dias.map(d => `<th>${d}</th>`).join("")}
       <th>Total</th>
     </tr>
@@ -241,6 +252,9 @@ function renderizar() {
   // Linhas por aluno
   alunos.forEach(aluno => {
     html += `<tr><td class="nome">${aluno}</td>`;
+
+    const matricula = filtrado.find(r => r.aluno === aluno)?.matricula || "-";
+    html += `<td class="matricula">${matricula}</td>`;
 
     let totalConfirmadas = 0;
 
@@ -271,16 +285,12 @@ function renderizar() {
     html += `</tr>`;
   });
 
-  // ==============================
   // Linha final: total de presenças por dia
-  // ==============================
-  html += `<tr><td class="nome"><strong>Total ✅</strong></td>`;
-
+  html += `<tr><td class="nome"><strong>Total ✅</strong></td><td></td>`;
   dias.forEach(dia => {
     const totalDia = filtrado.filter(r => r.data.split("/")[0] === dia && r.presenca).length;
     html += `<td><strong>${totalDia}</strong></td>`;
   });
-
   html += `<td>-</td>`; // coluna total não precisa somar percentual
   html += `</tr>`;
 
