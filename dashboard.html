@@ -1,1 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Diário de Classe – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root {
+      --uff-azul: #003366;
+      --uff-azul-claro: #e6eef6;
+      --uff-verde: #1b8f3c;
+      --uff-vermelho: #c0392b;
+      --cinza: #f4f6f8;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: var(--cinza);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      color: var(--uff-azul);
+      margin-bottom: 16px;
+    }
+
+    /* =============================
+       Cards de resumo
+       ============================= */
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.95rem;
+      color: #666;
+    }
+
+    .card .valor {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--uff-azul);
+    }
+
+    /* =============================
+       Tabela do diário
+       ============================= */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    thead {
+      background-color: var(--uff-azul);
+      color: white;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f8f9fb;
+    }
+
+    .status-ok {
+      color: var(--uff-verde);
+      font-weight: bold;
+    }
+
+    .status-erro {
+      color: var(--uff-vermelho);
+      font-weight: bold;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      background-color: var(--uff-azul-claro);
+      color: var(--uff-azul);
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>📘 Diário de Classe</h1>
+
+  <!-- RESUMO -->
+  <div class="cards">
+    <div class="card">
+      <h3>Total de aulas</h3>
+      <div class="valor" id="totalAulas">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Registros processados</h3>
+      <div class="valor" id="totalRegistros">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Presenças confirmadas</h3>
+      <div class="valor" id="presencasOk">0</div>
+    </div>
+
+    <div class="card">
+      <h3>Presenças invalidadas</h3>
+      <div class="valor" id="presencasErro">0</div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <table>
+    <thead>
+      <tr>
+        <th>Aluno</th>
+        <th>Matrícula</th>
+        <th>Data</th>
+        <th>Horário</th>
+        <th>Disciplina</th>
+        <th>Módulo</th>
+        <th>Status</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaDiario"></tbody>
+  </table>
+</div>
+
+<script>
+  const dados = JSON.parse(sessionStorage.getItem("dashboard"));
+
+  if (!dados) {
+    alert("Sessão expirada. Retorne ao início.");
+    window.location.href = "index.html";
+  }
+
+  const { resumo, diario_classe } = dados;
+
+  // ============================
+  // Preencher cards
+  // ============================
+
+  document.getElementById("totalAulas").textContent =
+    resumo.total_aulas || diario_classe.length;
+
+  document.getElementById("totalRegistros").textContent =
+    resumo.total_registros || 0;
+
+  document.getElementById("presencasOk").textContent =
+    resumo.por_status["Presença confirmada"] || 0;
+
+  document.getElementById("presencasErro").textContent =
+    diario_classe.filter(d => !d.presenca).length;
+
+  // ============================
+  // Tabela do diário
+  // ============================
+
+  const tbody = document.getElementById("tabelaDiario");
+
+  diario_classe.forEach(aula => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${aula.aluno}</td>
+      <td>${aula.matricula}</td>
+      <td>${aula.data}</td>
+      <td>${aula.horario_aula}</td>
+      <td>${aula.disciplina}</td>
+      <td><span class="badge">${aula.modulo}</span></td>
+      <td class="${aula.presenca ? "status-ok" : "status-erro"}">
+        ${aula.presenca ? "Presente" : "Ausente"}
+      </td>
+      <td>${aula.motivo || "-"}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+</script>
+
+</body>
+</html>
 
