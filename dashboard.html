@@ -149,13 +149,14 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
 
 #grafico-secundario-wrapper {
   display: flex;
-  gap: 40px;
+  gap: 20px; /* espaçamento horizontal ajustado */
   justify-content: flex-start;
 }
 
 #grafico-pizza, #graficoBarra {
   width: 40%;
-  height: 250px;
+  height: auto;
+  max-height: 250px;
 }
 </style>
 </head>
@@ -180,7 +181,6 @@ tr.total-linha { background: #f0f4f8; font-weight: bold; }
     <table id="tabelaDiario"></table>
   </div>
 
-  <!-- Legenda movida logo abaixo da tabela -->
   <div class="legenda">
     <strong>Legenda:</strong>
     ✅ Confirmada &nbsp;&nbsp;
