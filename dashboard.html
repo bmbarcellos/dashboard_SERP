@@ -213,7 +213,9 @@ table.conferencia td.aluno {
   <div class="filters">
     <select id="filtroMes"></select>
     <select id="filtroModulo"></select>
+    <select id="filtroHorario"></select>
   </div>
+
 
   <div class="table-wrapper">
     <table id="tabelaDiario"></table>
@@ -283,6 +285,7 @@ infoTurma.innerHTML = `
 // ==============================
 const selMes = document.getElementById("filtroMes");
 const selModulo = document.getElementById("filtroModulo");
+const selHorario = document.getElementById("filtroHorario");
 
 const mesesNome = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho",
   "Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -306,8 +309,14 @@ selModulo.innerHTML =
   `<option value="">Todos os módulos</option>` +
   modulos.map(m => `<option value="${m}">${m}</option>`).join("");
 
+const horarios = ordenarTexto(unico(diario.map(d => d.horario_aula)));
+selHorario.innerHTML =
+  `<option value="">Todos os horários</option>` +
+  horarios.map(h => `<option value="${h}">${h}</option>`).join("");
+  
 selMes.addEventListener("change", renderizar);
 selModulo.addEventListener("change", renderizar);
+selHorario.addEventListener("change", renderizar);
 
 // ==============================
 // Renderização
@@ -320,8 +329,10 @@ function renderizar() {
     const mes = extrairMes(d.data);
     return (!selMes.value || mes === selMes.value) &&
            (!selModulo.value || d.modulo === selModulo.value) &&
+           (!selHorario.value || d.horario_aula === selHorario.value) &&
            Number(mes) >= inicioMes && Number(mes) <= fimMes;
   });
+
 
   // ------------------------------
   // Tabela de presenças (linha)
